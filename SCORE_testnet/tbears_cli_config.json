@@ -1,5 +1,5 @@
 {
-    "uri": "https://bicon.net.solidwallet.io/api/v3",
+    "uri": "http://127.0.0.1:9000/api/v3",
     "nid": "0x3",
     "keyStore": null,
     "from": "hxe7af5fcfd8dfc67530a01a0e403882687528dfcb",
