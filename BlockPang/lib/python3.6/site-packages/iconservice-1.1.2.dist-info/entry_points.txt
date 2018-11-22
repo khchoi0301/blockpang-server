@@ -1,0 +1,3 @@
+[console_scripts]
+iconservice = iconservice.icon_service_cli:main
+

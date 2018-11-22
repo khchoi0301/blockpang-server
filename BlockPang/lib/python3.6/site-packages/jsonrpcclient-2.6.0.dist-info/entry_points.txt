@@ -1,0 +1,3 @@
+[console_scripts]
+jsonrpc = jsonrpcclient.__main__:main
+
