@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-
 import urllib.request
 
 from iconsdk.wallet.wallet import KeyWallet
@@ -14,7 +13,6 @@ from iconsdk.builder.transaction_builder import (
     CallTransactionBuilder,
     MessageTransactionBuilder
 )
-
 
 default_score = "cx31aef86872e344658372bd23a3cbbc1c810ec8fa"
 # icon_service = IconService(HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
@@ -34,13 +32,48 @@ def index(request):
     return HttpResponse(page)
     # return HttpResponse('Bye')
 
-# def test(request):
-#   return HttpResponse('test')
+
+def createwallet(request):
+
+    wallet = KeyWallet.create()
+    new_wallet = {}
+    # Check the wallet address
+    new_wallet['address'] = wallet.get_address()
+    # Let try getting the private key
+    new_wallet['key'] = wallet.get_private_key()
+
+    return HttpResponse(str(new_wallet))
 
 
-def req_icx(request, to_address):
+def setlimit(request, amountlimit, blocklimit):
+
+    limit_setting = {}
+    limit_setting['amountlimit'] = amountlimit
+    limit_setting['blocklimit'] = blocklimit
+
+    set_limit = CallTransactionBuilder()\
+        .from_(wallet.get_address())\
+        .to(default_score)\
+        .step_limit(5000000)\
+        .nid(3)\
+        .nonce(100)\
+        .method("set_limit")\
+        .params({'amountlimit': amountlimit, 'blocklimit': blocklimit})\
+        .build()
+    # Returns the signed transaction object having a signature
+    signed_transaction = SignedTransaction(set_limit, wallet)
+    # Sends the transaction
+    tx_hash = str(icon_service.send_transaction(signed_transaction))
+    print('set_limit complete', tx_hash)  # added
+
+    return HttpResponse(str(limit_setting))
+
+
+def req_icx(request, to_address, value):
 
     wallet_to = to_address
+    response = {}
+    response['block_address'] = default_score
 
     # Transfer
     transaction = CallTransactionBuilder()\
@@ -50,7 +83,7 @@ def req_icx(request, to_address):
         .nid(3)\
         .nonce(100)\
         .method("send_icx")\
-        .params({'_from': wallet_from, '_to': wallet_to})\
+        .params({'_from': wallet_from, '_to': wallet_to, 'value': value})\
         .build()
     # Returns the signed transaction object having a signature
     signed_transaction = SignedTransaction(transaction, wallet)
@@ -58,45 +91,43 @@ def req_icx(request, to_address):
     tx_hash = icon_service.send_transaction(signed_transaction)
     print('transaction complete')  # added
 
-    # Address of the Block
-    call = CallBuilder().from_(wallet_from)\
-        .to(default_score)\
-        .method("get_address")\
-        .build()
-    get_address = icon_service.call(call)
-    print('get_address', get_address)
-
     # Balance of the Block
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("get_balance")\
         .build()
-    get_balance = icon_service.call(call)
-    print('get_balance', get_balance)
+    block_balance = icon_service.call(call)
+    response['block_balance'] = block_balance
+    print('block_balance', block_balance)
 
-    # Balance of to_Address
+    # Balance of the wallet
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("get_to")\
         .params({'_from': wallet_from, '_to': wallet_to})\
         .build()
-    get_to = icon_service.call(call)
-    print('get_to', wallet_to, get_to)
+    wallet_balance = icon_service.call(call)
+    response['wallet_balance'] = wallet_balance
+    print('wallet_balance', wallet_to, wallet_balance)
 
+    # Wallet's latest transaction
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("find_transaction")\
         .params({'_to': wallet_to})\
         .build()
-    find_transaction = icon_service.call(call)
-    print('find_transaction', find_transaction)
+    wallet_latest_transaction = icon_service.call(call)
+    response['wallet_latest_transaction'] = wallet_latest_transaction
+    print('wallet_latest_transaction', wallet_latest_transaction)
 
+    # Latest block height
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("block_height")\
         .build()
-    block_height = icon_service.call(call)
-    print('block_height', block_height)
+    latest_block_height = icon_service.call(call)
+    response['latest_block_height'] = latest_block_height
+    print('latest_block_height', latest_block_height)
 
     # call = CallBuilder().from_(wallet_from)\
     # .to(default_score)\
@@ -105,8 +136,15 @@ def req_icx(request, to_address):
     # get_block = icon_service.call(call)
     # print('get_block',get_block)
 
-    page = 'block height : '+str(int(block_height, 16))+'<div></div>'+' find_transaction : '+str(int(find_transaction, 16))+'<div>tx_hash : </div>'+tx_hash + '<div></div>'+'block:' + \
-        '<div></div>'+get_address + ' // block balance' + \
-        str(int(get_balance, 16)/10**18) + '<div>to:</div>' + \
-        str(wallet_to)+' // balance is ' + str(int(get_to, 16)/10**18)
+    # Latest block info
+    latest_block_info = icon_service.get_block('latest')
+    response['latest_block_info'] = latest_block_info
+
+    print(latest_block_info)
+
+    page = str(latest_block_info)+'<div></div>'+'block height : '+str(int(latest_block_height, 16))+'<div></div>'+' find_transaction : '+str(int(wallet_latest_transaction, 16))+'<div>tx_hash : </div>'+tx_hash + '<div></div>'+'block:' + \
+        '<div></div>'+default_score + ' // block balance' + \
+        str(int(block_balance, 16)/10**18) + '<div>to:</div>' + \
+        str(wallet_to)+' // balance is ' + str(int(wallet_balance, 16)/10**18)
+
     return HttpResponse(page)

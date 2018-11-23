@@ -6,6 +6,8 @@ TAG = 'TestnetScore'
 class TestnetScore(IconScoreBase):
 
     _DISPENSE_TRACK = "DISPENSE TRACK"
+    _AMOUNT_LIMIT = "AMOUNT LIMIT"
+    _BLOCK_LIMIT = "BLOCK LIMIT"
 
     @eventlog(indexed=2)
     def FundTransfer(self, backer: Address, amount: int, is_top_up: bool):
@@ -15,6 +17,8 @@ class TestnetScore(IconScoreBase):
         super().__init__(db)
         self._dispenseTracking = DictDB(
             self._DISPENSE_TRACK, db, value_type=int)
+        self._amountlimit = VarDB(self._AMOUNT_LIMIT, db, value_type=int)
+        self._blocklimit = VarDB(self._BLOCK_LIMIT, db, value_type=int)
 
     def on_install(self) -> None:
         super().on_install()
@@ -25,7 +29,7 @@ class TestnetScore(IconScoreBase):
     @external(readonly=True)
     def hello(self) -> str:
         Logger.debug(f'Hello, world!', TAG)
-        return "Hello123"
+        return "Hello"
 
     @external(readonly=True)
     def get_balance(self) -> str:
@@ -47,29 +51,44 @@ class TestnetScore(IconScoreBase):
     def get_to(self, _to: Address, _from: Address) -> str:
         return self.icx.get_balance(_to)
 
-    # it doesn't work // why?? callBuilder problem???
-    @external(readonly=True)
-    def get_block(self) -> str:
-        return self.get_block('0xee0019ead377d6f9ee560c669f66b6a13811761c2388682d66a0f253cfbcdb24')
-
     # @external(readonly=True)
+    # def get_txresult(self, tx_hash: str) -> str:
+    #     Logger.info(
+    #         f'get_txresult of {tx_hash} ', TAG)
+    #     return self.icx.get_transaction_result(tx_hash)
+
+    # @external(readonly=True) # it doesn't work // why?? callBuilder problem???
     # def get_block(self) -> str:
-    #     return str(self.icx.get_block("6934"))
-    #     return str(self.icx.get_block("latest"))
-    #     return str(self.get_block(6934))
-    #     return str(self.icx.get_block(6934))
-    #     return self.icx.get_block(6934)
-    #     return self.icx.get_block('0xee0019ead377d6f9ee560c669f66b6a13811761c2388682d66a0f253cfbcdb24')
+    #     return self.get_block('0xee0019ead377d6f9ee560c669f66b6a13811761c2388682d66a0f253cfbcdb24')
 
     @external
-    def send_icx(self, _to: Address, _from: Address):
+    def set_limit(self, amountlimit: int, blocklimit: int):
+        self._amountlimit = amountlimit * 10 ** 18
+        self._blocklimit = blocklimit
+        Logger.info(
+            f'this sets amountlimit : {self._amountlimit} ( {amountlimit} icx ) blocklimit : {self._blocklimit}', TAG)
+        return 'limit changed'
 
-        if self._dispenseTracking[_to] > 0 and (self.block.height < self._dispenseTracking[_to] + 5):
+    @external
+    def send_icx(self, _to: Address, _from: Address, value: int):
+
+        # check if the address already asked for in last 30 blocks
+        if self._dispenseTracking[_to] > 0 and (self.block.height < self._dispenseTracking[_to] + self._blocklimit):
             Logger.info(
-                f'Please wait for 30 blocks to be created before requesting again', TAG)
-            revert('Please wait for 30 blocks to be created before requesting again')
+                f'Please wait for {self._blocklimit} blocks to be created before requesting again', TAG)
+            revert(
+                f'Please wait for {self._blocklimit} blocks to be created before requesting again', TAG)
 
-        amount = 5 * 10 ** 17
+        amount = 5 * 10 ** 17 * value
+
+        # check if score has enough balance
+        if(self.icx.get_balance(self.address) < amount * 100):
+            Logger.info(f'Not enough blance in faucet', TAG)
+            revert('faucet doesn\'t have balance to dispense')
+
+        if(self._amountlimit < amount):
+            Logger.info(f'requested amount is over the limit', TAG)
+            revert('requested amount is over the limit')
 
         result = self.icx.transfer(_to, amount)
         Logger.debug(
@@ -77,18 +96,6 @@ class TestnetScore(IconScoreBase):
         self.FundTransfer(_to, amount, False)
         Logger.debug(f'{amount} ICX sent to {_to} ', TAG)
         self._dispenseTracking[_to] = self.block.height
-        return result
-
-    @external
-    @payable
-    def send_icx_p(self, _to: Address, _from: Address):
-        amount = 5 * 10 ** 17
-
-        result = self.icx.transfer(_to, amount)
-        Logger.debug(
-            f'result of self.icx.send for amount {amount} to {_to} is {result}', TAG)
-        self.FundTransfer(_to, amount, False)
-        Logger.debug(f'{amount} ICX sent to {_to} ', TAG)
         return result
 
     @payable
