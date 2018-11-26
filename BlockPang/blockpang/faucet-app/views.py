@@ -1,6 +1,9 @@
+import ast
 from django.shortcuts import render
 from django.http import HttpResponse
 import urllib.request
+import os
+from django.views.decorators.csrf import csrf_exempt
 
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
@@ -14,13 +17,17 @@ from iconsdk.builder.transaction_builder import (
     MessageTransactionBuilder
 )
 
+from . import utils
+import json
+
 # icon_service = IconService(HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
 icon_service = IconService(HTTPProvider("http://127.0.0.1:9000/api/v3"))
 
-default_score = "cx31aef86872e344658372bd23a3cbbc1c810ec8fa"
+default_score = "cx5c6c38a828f222b66b673218d7297a3a744a0a38"
 
-wallet = KeyWallet.load(
-    "/home/khchoi/icon-tut/BlockPang/BlockPang/blockpang/faucet-app/keystore_test1.json", "@icon111")
+keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore')
+print('keypath', keypath)
+wallet = KeyWallet.load(keypath, "@icon111")
 wallet_from = wallet.get_address()
 
 
@@ -31,15 +38,25 @@ def index(request):
 
 def createwallet(request):
 
-    wallet = KeyWallet.create()
-    new_wallet = {}
-    # Check the wallet address
-    new_wallet['address'] = wallet.get_address()
-    # Let try getting the private key
-    new_wallet['key'] = wallet.get_private_key()
+    return HttpResponse(utils.createwallet(request))
 
-    return HttpResponse(str(new_wallet))
+    # def createwallet(request):
 
+    #     wallet = KeyWallet.create()
+    #     new_wallet = {}
+    #     # Check the wallet address
+    #     new_wallet['address'] = wallet.get_address()
+    #     # Let try getting the private key
+    #     new_wallet['key'] = wallet.get_private_key()
+
+    #     return HttpResponse(str(new_wallet))
+
+
+# def setlimit(request, amountlimit, blocklimit):
+
+#     result = utils.setlimit(request, amountlimit, blocklimit)
+
+#     return HttpResponse(str(result))
 
 def setlimit(request, amountlimit, blocklimit):
 
@@ -65,9 +82,19 @@ def setlimit(request, amountlimit, blocklimit):
     return HttpResponse(str(limit_setting))
 
 
+@csrf_exempt  # need to think about sequrity
 def req_icx(request, to_address, value):
 
-    wallet_icx_maxlimit = 30 * 10 ** 18
+    value = value
+
+    if request.method == 'POST':
+        print('req', request)
+        print('method', request.method)
+        req_body = ast.literal_eval(request.body.decode('utf-8'))
+        value = req_body['value']
+        print('POST VALUE', value)
+
+    wallet_icx_maxlimit = 100 * 10 ** 18
     block_icx_warning_minlimit = 100 * 10 ** 18
 
     response = {}
@@ -139,7 +166,7 @@ def req_icx(request, to_address, value):
     # Latest block info
     latest_block_info = icon_service.get_block('latest')
     response['latest_block_info'] = latest_block_info
-    print(latest_block_info)
+    # print(latest_block_info)
 
     # call = CallBuilder().from_(wallet_from)\
     # .to(default_score)\
@@ -149,7 +176,7 @@ def req_icx(request, to_address, value):
     # print('get_block',get_block)
 
     page = str(latest_block_info)+'<div></div>'+'block height : '+str(int(latest_block_height, 16))+'<div></div>'+' find_transaction : '+str(int(wallet_latest_transaction, 16))+'<div>tx_hash : </div>'+tx_hash + '<div></div>'+'block:' + \
-        '<div></div>'+default_score + ' // block balance' + \
+        '<div></div>'+default_score + ' // balance is ' + \
         str(int(block_balance, 16)/10**18) + '<div>to:</div>' + \
         str(to_address)+' // balance is ' + str(int(wallet_balance, 16)/10**18)
 
