@@ -70,7 +70,7 @@ class TestnetScore(IconScoreBase):
         return 'limit changed'
 
     @external
-    def send_icx(self, _to: Address, _from: Address, value: int):
+    def send_icx(self, _to: Address, value: int):
 
         # check if the address already asked for in last 30 blocks
         if self._dispenseTracking[_to] > 0 and (self.block.height < self._dispenseTracking[_to] + self._blocklimit):
@@ -96,6 +96,7 @@ class TestnetScore(IconScoreBase):
         self.FundTransfer(_to, amount, False)
         Logger.debug(f'{amount} ICX sent to {_to} ', TAG)
         self._dispenseTracking[_to] = self.block.height
+        Logger.info(f'_dispenseTracking{self._dispenseTracking}', TAG)
         return result
 
     @payable
