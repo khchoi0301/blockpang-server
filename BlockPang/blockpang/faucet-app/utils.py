@@ -20,8 +20,7 @@ from iconsdk.builder.transaction_builder import (
 
 # icon_service = IconService(HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
 icon_service = IconService(HTTPProvider("http://127.0.0.1:9000/api/v3"))
-
-default_score = "cx8a0083b9a7c45ca6f5b9a3d541b7c82eacb0a3bf"
+default_score = "cxa026915f6c8ae9075b9e8efaafe5776d8cf30956"
 
 keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore')
 print('keypath', keypath)

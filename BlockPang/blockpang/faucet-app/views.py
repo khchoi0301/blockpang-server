@@ -5,6 +5,7 @@ import urllib.request
 from django.views.decorators.csrf import csrf_exempt
 from . import utils
 import time
+from django.core.mail import send_mail
 
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
@@ -19,7 +20,9 @@ from iconsdk.builder.transaction_builder import (
 )
 
 
-default_score = "cx8a0083b9a7c45ca6f5b9a3d541b7c82eacb0a3bf"
+default_score = "cxa026915f6c8ae9075b9e8efaafe5776d8cf30956"
+# icon_service = IconService(HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
+
 icon_service = IconService(HTTPProvider("http://127.0.0.1:9000/api/v3"))
 
 
@@ -29,12 +32,10 @@ def index(request):
 
 
 def createwallet(request):
-
     return HttpResponse(utils.createwallet(request))
 
 
 def setlimit(request, amountlimit, blocklimit):
-
     return HttpResponse(utils.set_limit(request, amountlimit, blocklimit))
 
 
@@ -45,13 +46,26 @@ def getlimit(request):
     return HttpResponse(str(limit))
 
 
-@csrf_exempt  # need to think about sequrity
+def email(request):
+    subject = 'Icon Faucet: Not enough icx'
+    message = f'Score has less than {request} icx. Please add icx to score.'
+    email_from = settings.EMAIL_HOST_USER
+    recipient_list = ['charredbroccoli@gmail.com', 'khchoi0301@gmail.com']
+    send_mail(subject, message, email_from, recipient_list)
+    print('email has been sent.')
+    return HttpResponse('Email sent!')
+
+
+@csrf_exempt  # need to think about security
 def req_icx(request, to_address, value):
 
     wallet_icx_maxlimit = 100 * 10 ** 18
     block_icx_warning_minlimit = 100 * 10 ** 18
+    block_limit = str(block_icx_warning_minlimit)
 
     value = value
+
+    email(block_limit)
 
     if request.method == 'POST':
         print('req', request)
@@ -67,7 +81,9 @@ def req_icx(request, to_address, value):
 
     # send a email to admin when block doesn't have enough icx
     if (response['block_balance'] < block_icx_warning_minlimit):
-        return HttpResponse('Not enough icx in block - block_icx_warning_minlimit : ' + str(block_icx_warning_minlimit))
+        #call send_email function
+        return HttpResponse(
+            'Not enough icx in block - block_icx_warning_minlimit : ' + block_limit)
 
     # transfer icx only when wallet's balance is under the limit
     if (response['wallet_balance'] > wallet_icx_maxlimit):
@@ -109,9 +125,4 @@ def req_icx(request, to_address, value):
 
     # render info
     page = '<div></div>'+str(response['latest_block_info'])+'<div></div>'+'block height : '+str(response['latest_block_height'])+'<div></div>'+' find_transaction : '+str(response['wallet_latest_transaction'])+'<div>tx_hash : </div>'+response['tx_hash'] + '<div></div>'+'block:' + \
-        '<div></div>'+default_score + ' // balance is ' + \
-        str(response['block_balance']/10**18) + '<div>to:</div>' + \
-        str(to_address)+' // balance is ' + \
-        str(response['wallet_balance']/10**18)
-
     return HttpResponse(page)
