@@ -20,7 +20,6 @@ from iconsdk.builder.transaction_builder import (
 
 # icon_service = IconService(HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
 icon_service = IconService(HTTPProvider("http://127.0.0.1:9000/api/v3"))
-
 default_score = "cxa026915f6c8ae9075b9e8efaafe5776d8cf30956"
 
 keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore')
@@ -40,8 +39,10 @@ def createwallet(request):
 
     return str(new_wallet)
 
+# Set limits
 
-def setlimit(request, amountlimit, blocklimit):
+
+def set_limit(request, amountlimit, blocklimit):
 
     limit_setting = {}
     limit_setting['amountlimit'] = amountlimit
@@ -65,7 +66,18 @@ def setlimit(request, amountlimit, blocklimit):
     return str(limit_setting)
 
 
+# Get limits
+def get_limit():
+
+    call = CallBuilder().from_(wallet_from)\
+        .to(default_score)\
+        .method("get_limit")\
+        .build()
+    return icon_service.call(call)
+
 # Balance of the Block
+
+
 def block_balance():
 
     call = CallBuilder().from_(wallet_from)\
