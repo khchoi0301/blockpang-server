@@ -18,6 +18,5 @@ from django.contrib import admin
 
 urlpatterns = [
     path('faucet/', include('faucet-app.urls')),
-
     path('admin/', admin.site.urls),
 ]
