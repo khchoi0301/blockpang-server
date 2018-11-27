@@ -19,7 +19,7 @@ from iconsdk.builder.transaction_builder import (
 )
 
 
-default_score = "cxdbd437afb36f7d3917ac841943afb15e8b484036"
+default_score = "cx8a0083b9a7c45ca6f5b9a3d541b7c82eacb0a3bf"
 icon_service = IconService(HTTPProvider("http://127.0.0.1:9000/api/v3"))
 
 
@@ -39,8 +39,10 @@ def setlimit(request, amountlimit, blocklimit):
 
 
 def getlimit(request):
-
-    return HttpResponse(str(utils.get_limit()))
+    limit = utils.get_limit()
+    limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
+    limit['blocklimit'] = int(limit['blocklimit'], 16)
+    return HttpResponse(str(limit))
 
 
 @csrf_exempt  # need to think about sequrity
