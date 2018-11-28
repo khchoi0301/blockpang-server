@@ -1,8 +1,0 @@
-{'version': 'tbears', 'prev_block_hash': '98229d266487087c9b424966967a68d16857df7385669609e4ed9e672e988ee0', 'merkle_tree_root_hash': 'tbears_block_manager_does_not_support_block_merkle_tree', 'time_stamp': 1543195152435666, 'confirmed_transaction_list': [
-        {'version': 3, 'from': 'hx9920fb964da4047c3bd86a6263a62ae2e63e6c96', 'stepLimit': 5000000, 'timestamp': 1543195149605211, 'nid': 3, 'to': 'cxa8b6312eb1810eedf171b00c8849a193fe7e7698', 'nonce': 100, 'dataType': 'call', 'data': {'method': 'send_icx', 'params': {
-    '_from': 'hx9920fb964da4047c3bd86a6263a62ae2e63e6c96', '_to': 'hx1e3cb08479a4ee59d92fd77e484d2df61383944a', 'value': '0x3'
-                }
-            }, 'signature': 'IAk+ZdFgUGOkWs2hDiB0slkEl1goTR+EGNsZ995Cc9lgZW2ykzcsIv+bvkylsWMMqnsJkM5wgCGT1Wh3Rt9yAQE=', 'txHash': '0xbdf0cfe04483ec76dc84dac5a783099068e6733b58f5763e95217feeccf43537'
-        }
-    ], 'block_hash': '9a0dadfcbdbffb0aa21a5e242a7a26f81f49959eabcaaa5acdbeb82e5a3e5dd3', 'height': 3000, 'peer_id': '8e0d353e-f115-11e8-8080-3052cb50b145', 'signature': 'tbears_block_manager_does_not_support_block_signature'
-}
