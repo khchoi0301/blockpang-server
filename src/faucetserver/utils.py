@@ -16,15 +16,14 @@ from iconsdk.builder.transaction_builder import (
     MessageTransactionBuilder
 )
 
-# icon_service = IconService(HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
-icon_service = IconService(HTTPProvider("http://127.0.0.1:9000/api/v3"))
+icon_service = IconService(HTTPProvider(
+    "https://bicon.net.solidwallet.io/api/v3"))
+default_score = "cxffcc56806535faba51f3429cd12c21e9e28e1ec4"
 
-default_score = "cxa026915f6c8ae9075b9e8efaafe5776d8cf30956"
-
-# keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore')
-# print('keypath', keypath)
-# wallet = KeyWallet.load(keypath, "@icon111")
-# wallet_from = wallet.get_address()
+keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore2')
+print('keypath', keypath)
+wallet = KeyWallet.load(keypath, "@icon222")
+wallet_from = wallet.get_address()
 
 
 def create_wallet(request):

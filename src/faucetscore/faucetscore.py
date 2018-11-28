@@ -18,6 +18,8 @@ class FaucetScore(IconScoreBase):
             self._DISPENSE_TRACK, db, value_type=int)
         self._amountlimit = VarDB(self._AMOUNT_LIMIT, db, value_type=int)
         self._blocklimit = VarDB(self._BLOCK_LIMIT, db, value_type=int)
+        self._amountlimit = 100 * 10 ** 18
+        self._blocklimit = 30
 
     def on_install(self) -> None:
         super().on_install()

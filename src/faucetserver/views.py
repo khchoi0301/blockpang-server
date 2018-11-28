@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.db import connections
 from django.core.mail import send_mail
 from django.conf import settings
 import ast
@@ -19,9 +20,17 @@ from iconsdk.builder.transaction_builder import (
 )
 from . import utils
 
-default_score = "cxa026915f6c8ae9075b9e8efaafe5776d8cf30956"
-# icon_service = IconService(HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
-icon_service = IconService(HTTPProvider("http://127.0.0.1:9000/api/v3"))
+icon_service = IconService(HTTPProvider(
+    "https://bicon.net.solidwallet.io/api/v3"))
+default_score = "cxffcc56806535faba51f3429cd12c21e9e28e1ec4"
+
+def queryDB(request):
+    """DB Query."""
+    cursor = connections['default'].cursor()
+    cursor.execute("SELECT * FROM transaction")
+    query_result = cursor.fetchall()
+    return HttpResponse(query_result)
+
 
 def index(request):
     page = '<div> connet to the uri : faucet/wallet_address/int </div>'
@@ -54,7 +63,7 @@ def show_transaction(request):
 def req_icx(request, to_address, value):
 
     wallet_icx_maxlimit = 100 * 10 ** 18
-    block_icx_warning_minlimit = 100 * 10 ** 18
+    block_icx_warning_minlimit = 1 * 10 ** 18
     block_limit = str(block_icx_warning_minlimit)
 
     value = value

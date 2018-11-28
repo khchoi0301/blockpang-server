@@ -78,10 +78,10 @@ WSGI_APPLICATION = 'blockpang.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'transaction',
-        'USER': 'sungun',
-        'PASSWORD': '',
-        'HOST': 'localhost',
+        'NAME': 'faucet',
+        'USER': 'power_user',
+        'PASSWORD': '@tamago111',
+        'HOST': 'ec2-13-209-19-6.ap-northeast-2.compute.amazonaws.com',
         'PORT': '5432',
     }
 }
