@@ -28,6 +28,13 @@ default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 cursor = connections['default'].cursor()
 
+def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
+    print('insertDB_transaction')
+    query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
+    cursor.execute(query,(txhash, block, score, wallet, amount, txfee))
+    connections['default'].commit()
+
+    return 'success'
 
 def query_transaction(request):
     json_data = []
@@ -81,9 +88,9 @@ def get_limit(request):
     return HttpResponse(str(limit))
 
 
-def email(request):
+def email(minlimit):
     subject = 'Icon Faucet: Not enough icx'
-    message = f'Score has less than {request} icx. Please add icx to score.'
+    message = f'Score has less than {minlimit} icx. Please add icx to score.'
     email_from = settings.EMAIL_HOST_USER
     recipient_list = ['charredbroccoli@gmail.com', 'khchoi0301@gmail.com']
     send_mail(subject, message, email_from, recipient_list)
@@ -99,12 +106,8 @@ def show_transaction(request):
 def req_icx(request, to_address, value):
 
     wallet_icx_maxlimit = 100 * 10 ** 18
-    block_icx_warning_minlimit = 1 * 10 ** 18
-    # block_limit = str(block_icx_warning_minlimit)
-
+    block_icx_warning_minlimit = 10 * 10 ** 18
     value = value
-
-    # email(block_limit)
 
     if request.method == 'POST':
         print('req', request)
@@ -121,6 +124,8 @@ def req_icx(request, to_address, value):
     # send a email to admin when block doesn't have enough icx
     if (response['block_balance'] < block_icx_warning_minlimit):
         # call send_email function
+        email(str(block_icx_warning_minlimit))
+
         return HttpResponse('Not enough icx in block - block_icx_warning_minlimit : ' + block_limit)
 
     # transfer icx only when wallet's balance is under the limit
@@ -131,23 +136,8 @@ def req_icx(request, to_address, value):
     response['tx_hash'] = utils.send_transaction(request, to_address, value)
 
     # check the transaction result
-    try:
-        time.sleep(6)
-        print('6s')
-        response['tx_result'] = icon_service.get_transaction_result(
-            response['tx_hash'])
-
-    except:
-        time.sleep(6)
-        print('12s')
-        try:
-            response['tx_result'] = icon_service.get_transaction_result(
-                response['tx_hash'])
-        except:
-            response['tx_result'] = {'failure': {
-                'code': '0x7d65', 'message': "Please wait for few blocks to be created before requesting again"}}
-
-    print(response['tx_result'])
+    response['tx_result'] = check_transaction_result(response['tx_hash'])
+    print('result', response['tx_result'])
 
     # check results
     response['block_address'] = default_score
@@ -161,42 +151,31 @@ def req_icx(request, to_address, value):
         utils.get_wallet_balance(request, to_address), 16)
 
 
-    print('1')
-    # print('hello',response['tx_result'])
-    print(response['tx_result']['txHash'])
-    print(response['tx_result']['blockHeight'])
-    print(response['tx_result']['stepPrice']/10**18)
-    print(response['tx_result']['stepUsed']/10**18)
-    
-    
-
-    print(response['tx_result']['eventLogs'])
-    if response['tx_result']['eventLogs'] is None :
+    if not response['tx_result']['eventLogs']:         
         print(response['tx_result']['failure'])
     else :    
-        print(response['tx_result']['eventLogs'][0])
-        print(response['tx_result']['eventLogs'][0]['scoreAddress'])
-        print(response['tx_result']['eventLogs'][0]['indexed'][2])
-        
-
-    print('2')
+        insertDB_transaction(response['tx_result']['txHash'],response['tx_result']['blockHeight'],default_score,to_address,value*0.1,0.0001)
     
-    # INSERT INTO transaction (txhash, block, from_wallet, to_wallet, amount, txfee)
-    # (response['tx_result']['txHash'],response['tx_result']['blockHeight'],print(response['tx_result']['eventLogs'][0]['scoreAddress']),print(response['tx_result']['eventLogs'][0]['indexed'][2]),);
-
-    
-
     page = '<div></div>'+str(response['latest_block_info'])+'<div></div>'+'block height : '+str(response['latest_block_height'])+'<div></div>'+' find_transaction : '+str(response['wallet_latest_transaction'])+'<div>tx_hash : </div>'+response['tx_hash'] + '<div></div>'+'block:' + \
         '<div></div>'+default_score + ' // balance is ' + \
         str(response['block_balance']/10**18) + '<div>to:</div>' + \
         str(to_address)+' // balance is ' + \
         str(response['wallet_balance']/10**18)
 
-    # page = str(response['latest_block_info'])+'<div></div>'+'block height : '+str(response['latest_block_height'])+'<div></div>'+' find_transaction : '+str(response['wallet_latest_transaction'])+'<div>tx_hash : </div>'+response['tx_hash'] + '<div></div>'+'block:' + \
-    #     '<div></div>'+default_score + ' // balance is ' + \
-    #     str(response['block_balance']/10**18) + '<div>to:</div>' + \
-    #     str(to_address)+' // balance is ' + \
-    #     str(response['wallet_balance']/10**18)
-
     return HttpResponse(str(response['tx_result']))
 
+def check_transaction_result(tx_hash):
+    # check the transaction result
+    try:
+        time.sleep(6)
+        print('6s')
+        tx_result = icon_service.get_transaction_result(tx_hash)
+    except:
+        time.sleep(6)
+        print('12s')
+        try:
+            tx_result = icon_service.get_transaction_result(tx_hash)
+        except:
+            tx_result = {'failure': { 'code': '0x7d65', 'message': "Please wait for few blocks to be created before requesting again"}}
+
+    return tx_result
