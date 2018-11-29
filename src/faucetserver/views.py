@@ -93,6 +93,15 @@ def update_admin(request, cmd, email):
     return HttpResponse(str(recipient))
 
 
+def get_current_balance(request):
+    result = utils.get_block_balance()
+    return HttpResponse(
+        f'<div>Score: {default_score}</div>\
+        <br>\
+        <div>Current Balance:</div>\
+        <div style="font-weight:bold;">{result}</div>')
+
+
 @csrf_exempt  # need to think about security
 def req_icx(request, to_address, value):
 
