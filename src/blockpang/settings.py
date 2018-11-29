@@ -81,7 +81,7 @@ DATABASES = {
         'NAME': 'faucet',
         'USER': 'power_user',
         'PASSWORD': '@tamago111',
-        'HOST': 'ec2-13-209-19-6.ap-northeast-2.compute.amazonaws.com',
+        'HOST': 'ec2-54-180-106-121.ap-northeast-2.compute.amazonaws.com',
         'PORT': '5432',
     }
 }

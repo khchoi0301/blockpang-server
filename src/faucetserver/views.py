@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db import connections
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import connections
 import ast
+import datetime
+import json
 import os
 import urllib.request
 from iconsdk.wallet.wallet import KeyWallet
@@ -20,17 +22,46 @@ from iconsdk.builder.transaction_builder import (
 )
 from . import utils
 
-icon_service = IconService(HTTPProvider(
-    "https://bicon.net.solidwallet.io/api/v3"))
+
+icon_service = IconService(
+    HTTPProvider("https://bicon.net.solidwallet.io/api/v3"))
 default_score = "cxffcc56806535faba51f3429cd12c21e9e28e1ec4"
 
-def queryDB(request):
-    """DB Query."""
-    cursor = connections['default'].cursor()
-    cursor.execute("SELECT * FROM transaction")
-    query_result = cursor.fetchall()
-    return HttpResponse(query_result)
+cursor = connections['default'].cursor()
 
+
+def query_transaction(request):
+    json_data = []
+
+    query = """
+        SELECT * FROM transaction;
+        """
+
+    cursor.execute(query)
+    row_headers=[x[0] for x in cursor.description]
+    query_result = cursor.fetchall()
+
+    for result in query_result:
+        json_data.append(dict(zip(row_headers, result)))
+
+    return HttpResponse(str(json_data))
+
+
+def query_user(request):
+    json_data = []
+
+    query = """
+        SELECT * from users;
+        """
+
+    cursor.execute(query)
+    row_headers=[x[0] for x in cursor.description]
+    query_result = cursor.fetchall()
+
+    for result in query_result:
+        json_data.append(dict(zip(row_headers, result)))
+
+    return HttpResponse(str(json_data))
 
 def index(request):
     page = '<div> connet to the uri : faucet/wallet_address/int </div>'
