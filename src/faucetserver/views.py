@@ -24,18 +24,15 @@ from iconsdk.builder.transaction_builder import (
 from . import utils
 
 
+cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
-cursor = connections['default'].cursor()
+recipient = settings.RECIPIENT_LIST
 
 
 def query_transaction(request):
     json_data = []
-
-    query = """
-        SELECT * FROM transaction;
-        """
-
+    query = 'SELECT * FROM transaction;'
     cursor.execute(query)
     row_headers=[x[0] for x in cursor.description]
     query_result = cursor.fetchall()
@@ -48,11 +45,7 @@ def query_transaction(request):
 
 def query_user(request):
     json_data = []
-
-    query = """
-        SELECT * from users;
-        """
-
+    query = 'SELECT * from users;'
     cursor.execute(query)
     row_headers=[x[0] for x in cursor.description]
     query_result = cursor.fetchall()
@@ -62,8 +55,9 @@ def query_user(request):
 
     return HttpResponse(str(json_data))
 
+
 def index(request):
-    page = '<div> connet to the uri : faucet/wallet_address/int </div>'
+    page = '<div> Hello Admins: </div>' + str(recipient)
     return HttpResponse(page)
 
 
@@ -85,14 +79,18 @@ def email(request):
     subject = 'Icon Faucet: Not enough icx'
     message = f'Score has less than {request} icx. Please add icx to score.'
     email_from = settings.EMAIL_HOST_USER
-    recipient_list = ['charredbroccoli@gmail.com', 'khchoi0301@gmail.com']
-    send_mail(subject, message, email_from, recipient_list)
+    send_mail(subject, message, email_from, recipient)
     print('email has been sent.')
-    return HttpResponse('Email sent!')
+    return HttpResponse('Email has been sent to admins.')
 
 
-def show_transaction(request):
-    return HttpResponse()
+def update_admin(request, cmd, email):
+    if cmd == 'add':
+        recipient.append(email)
+    elif cmd == 'delete':
+        recipient.remove(email)
+
+    return HttpResponse(str(recipient))
 
 
 @csrf_exempt  # need to think about security
