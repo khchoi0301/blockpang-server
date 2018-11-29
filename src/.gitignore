@@ -1,0 +1,10 @@
+.score
+.statedb
+.vscode
+exc/
+db.sqlite3
+tbears.log
+blockpang/__pycache__
+faucetscore/__pycache__
+faucetserver/__pycache__
+*.pyc
