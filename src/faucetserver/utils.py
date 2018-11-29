@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import os
 import urllib.request
+from django.conf import settings
 
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
@@ -16,9 +17,8 @@ from iconsdk.builder.transaction_builder import (
     MessageTransactionBuilder
 )
 
-icon_service = IconService(HTTPProvider(
-    "https://bicon.net.solidwallet.io/api/v3"))
-default_score = "cxffcc56806535faba51f3429cd12c21e9e28e1ec4"
+default_score = settings.DEFAULT_SCORE_ADDRESS
+icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 
 keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore2')
 print('keypath', keypath)
@@ -36,6 +36,14 @@ def create_wallet(request):
     new_wallet['key'] = wallet.get_private_key()
 
     return str(new_wallet)
+
+def get_limit():
+    """ Get limits """
+    call = CallBuilder().from_(wallet_from)\
+        .to(default_score)\
+        .method("get_limit")\
+        .build()
+    return icon_service.call(call)
 
 
 def set_limit(request, amount_limit, block_limit):
