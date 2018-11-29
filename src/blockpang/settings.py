@@ -28,6 +28,11 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+DEFAULT_SCORE_ADDRESS = 'cxffcc56806535faba51f3429cd12c21e9e28e1ec4'
+ICON_SERVICE_PROVIDER = "https://bicon.net.solidwallet.io/api/v3"
+# ICON_SERVICE_PROVIDER = "http://127.0.0.1:9000/api/v3"
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -81,7 +86,7 @@ DATABASES = {
         'NAME': 'faucet',
         'USER': 'power_user',
         'PASSWORD': '@tamago111',
-        'HOST': 'ec2-13-209-19-6.ap-northeast-2.compute.amazonaws.com',
+        'HOST': 'ec2-54-180-106-121.ap-northeast-2.compute.amazonaws.com',
         'PORT': '5432',
     }
 }
