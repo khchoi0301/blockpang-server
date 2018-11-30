@@ -1,13 +1,12 @@
+from django.db import connections
+from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+import ast
 import os
 import urllib.request
 import time
-import ast
-from django.db import connections
-
-from django.conf import settings
 
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
