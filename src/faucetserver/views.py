@@ -29,14 +29,6 @@ recipient = settings.RECIPIENT_LIST
 response = {}
 
 
-# def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
-#     print('insertDB_transaction')
-#     query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
-#     cursor.execute(query, (txhash, block, score, wallet, amount, txfee))
-#     connections['default'].commit()
-
-#     return 'success'
-
 
 def query_transaction(request):
     json_data = []
@@ -80,18 +72,11 @@ def update_wallet(request):
         return HttpResponse(utils.update_wallet(request))
 
 
-# def insertDB_users(request):
-#     print('insertDB_users', request.body)
+def transfer_stat(request):
+    return HttpResponse(utils.transfer_stat(request))
 
-#     if request.method == 'POST':
-#         req_body = ast.literal_eval(request.body.decode('utf-8'))
-
-#     query = "INSERT INTO users (service_provider, wallet, email, user_pid) VALUES (%s,%s,%s,%s)"
-#     cursor.execute(query, (req_body['service_provider'],
-#                            req_body['wallet'], req_body['email'], req_body['user_pid']))
-#     connections['default'].commit()
-
-#     return 'success'
+def user_stat(request):
+    return HttpResponse(utils.user_stat(request))
 
 
 def set_limit(request, amount_limit, block_limit):

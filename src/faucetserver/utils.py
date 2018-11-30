@@ -32,6 +32,38 @@ wallet_from = wallet.get_address()
 
 
 
+def transfer_stat(request):
+    print('create transfer statistics',request)
+
+    query = 'SELECT * FROM transaction;'
+    cursor.execute(query)
+    query_result = cursor.fetchall()
+
+
+    return HttpResponse(str(query_result))
+
+
+def user_stat(request):
+    print('create users statistics',request)
+
+    stat_result = {}
+
+    # query = """
+    # SELECT COUNT(wallet) FROM users
+    # """
+
+    query = """
+    SELECT to_char(date_trunc('day', (current_date - offs)), 'YYYY-MM-DD')
+    AS date 
+    FROM generate_series(0, 365, 1) 
+    AS offs
+    """
+
+    cursor.execute(query)
+    stat_result['tatal_users'] = cursor.fetchall()
+
+    return HttpResponse(str(stat_result))
+
 
 def update_wallet(request):
     print('Update a wallet to database',request)
