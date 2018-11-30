@@ -3,7 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('transfer', views.req_icx, name='req_icx'), # need to change method get to post
+    path('transfer', views.req_icx, name='req_icx'),
     path('wallet/create', views.create_wallet, name='create_wallet'),
     path('wallet/update', views.update_wallet, name='update_wallet'),
     path('admin/get_limit', views.get_limit, name='get_limit'),
@@ -14,6 +14,5 @@ urlpatterns = [
     path('admin/stat', views.transfer_stat, name='transfer_stat'),
     path('admin/stat/users', views.user_stat, name='user_stat'), 
     path('admin/current_balance', views.get_current_balance, name='current_balance'),
-    path('<str:to_address>/<int:value>', views.req_icx, name='req_icx'),
     path('db/<str:table>', views.db_query, name='db_query'),
 ]
