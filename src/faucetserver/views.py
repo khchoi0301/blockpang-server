@@ -72,6 +72,15 @@ def update_wallet(request):
         return HttpResponse(utils.update_wallet(request))
 
 
+def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
+   print('insertDB_transaction')
+   query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
+   cursor.execute(query,(txhash, block, score, wallet, amount, txfee))
+   connections['default'].commit()
+
+   return 'success'
+
+
 def transfer_stat(request):
     return HttpResponse(utils.transfer_stat(request))
 
