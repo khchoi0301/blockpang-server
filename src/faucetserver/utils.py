@@ -66,6 +66,25 @@ def update_admin(request, cmd, email):
     return HttpResponse(str(recipient))
 
 
+def get_highest_gscores(request):
+    json_data = []
+    query = '''
+        SELECT users.email, transaction.wallet, transaction.gscore 
+        FROM transaction, users
+        WHERE transaction.gscore is NOT NULL 
+        AND transaction.wallet = users.wallet
+        ORDER BY gscore DESC
+        limit 10;
+    '''
+    cursor.execute(query)
+    row_headers = [x[0] for x in cursor.description]
+    query_result = cursor.fetchall()
+    for result in query_result:
+        json_data.append(dict(zip(row_headers, result)))
+        
+    return HttpResponse(str(json_data))
+
+
 def transfer_stat(request):
     print('create transfer statistics',request)
 
