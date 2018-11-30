@@ -32,10 +32,19 @@ wallet = KeyWallet.load(keypath, "@icon222")
 wallet_from = wallet.get_address()
 
 
+
+
+def update_wallet(request):
+    print('Update a wallet to database',request)
+    insertDB_users(request,'request should includes wallet address')
+
+    return 'success'
+
 def create_wallet(request):
-    """Create a wallet."""
-    wallet = KeyWallet.create()
+    print('Create a wallet',request)
     new_wallet = {}
+
+    wallet = KeyWallet.create()
     # Check the wallet address
     new_wallet['address'] = wallet.get_address()
     # Let try getting the private key
@@ -47,16 +56,20 @@ def create_wallet(request):
 
 
 def insertDB_users(request, wallet):
-    print('insertDB_users')
-    if request.method == 'POST':
-        req_body = ast.literal_eval(request.body.decode('utf-8'))
+    print('insertDB_users',request,wallet)
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+
+    try:
+        req_body['wallet'] = req_body['wallet']
+    except:
+        req_body['wallet'] = wallet
 
     query = "INSERT INTO users (service_provider, wallet, email, user_pid) VALUES (%s,%s,%s,%s)"
     cursor.execute(query, (req_body['service_provider'],
-                           wallet, req_body['email'], req_body['user_pid']))
+                           req_body['wallet'], req_body['email'], req_body['user_pid']))
     connections['default'].commit()
 
-    return
+    return 'USERS DB updated'
 
 
 def get_limit():

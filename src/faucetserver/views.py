@@ -28,13 +28,13 @@ icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 recipient = settings.RECIPIENT_LIST
 
 
-def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
-    print('insertDB_transaction')
-    query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
-    cursor.execute(query, (txhash, block, score, wallet, amount, txfee))
-    connections['default'].commit()
+# def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
+#     print('insertDB_transaction')
+#     query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
+#     cursor.execute(query, (txhash, block, score, wallet, amount, txfee))
+#     connections['default'].commit()
 
-    return 'success'
+#     return 'success'
 
 
 def query_transaction(request):
@@ -70,7 +70,13 @@ def index(request):
 
 @csrf_exempt  # need to think about security
 def create_wallet(request):
-    return HttpResponse(utils.create_wallet(request))
+    if request.method == 'POST':
+        return HttpResponse(utils.create_wallet(request))
+
+@csrf_exempt  # need to think about security
+def update_wallet(request):
+    if request.method == 'POST':
+        return HttpResponse(utils.update_wallet(request))
 
 
 # def insertDB_users(request):
