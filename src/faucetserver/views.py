@@ -22,6 +22,7 @@ from iconsdk.builder.transaction_builder import (
 )
 from . import utils
 
+
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
@@ -29,42 +30,37 @@ recipient = settings.RECIPIENT_LIST
 response = {}
 
 
-
-def query_transaction(request):
-    json_data = []
-    query = 'SELECT * FROM transaction;'
-    cursor.execute(query)
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-
-    for result in query_result:
-        json_data.append(dict(zip(row_headers, result)))
-
-    return HttpResponse(str(json_data))
-
-
-def query_user(request):
-    json_data = []
-    query = 'SELECT * from users;'
-    cursor.execute(query)
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-
-    for result in query_result:
-        json_data.append(dict(zip(row_headers, result)))
-
-    return HttpResponse(str(json_data))
-
-
 def index(request):
-    page = '<div> Hello Admins: </div>' + str(recipient)
+    page = f'<div> Hello Admins: </div>{str(recipient)}'
     return HttpResponse(page)
+
+
+def db_query(request, table):
+    return HttpResponse(utils.db_query(request, table))
+
+
+def email(minlimit):
+    return HttpResponse(utils.email(minlimit))
+
+
+def update_admin(request, cmd, email):
+    return HttpResponse(utils.update_admin(request, cmd, email))
+
+
+def get_current_balance(request):
+    result = utils.get_block_balance()
+    return HttpResponse(
+        f'<div>Score: {default_score}</div>\
+        <br>\
+        <div>Current Balance:</div>\
+        <div style="font-weight:bold;">{result}</div>')
 
 
 @csrf_exempt  # need to think about security
 def create_wallet(request):
     if request.method == 'POST':
         return HttpResponse(utils.create_wallet(request))
+
 
 @csrf_exempt  # need to think about security
 def update_wallet(request):
@@ -97,33 +93,6 @@ def get_limit(request):
     limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
     limit['blocklimit'] = int(limit['blocklimit'], 16)
     return HttpResponse(str(limit))
-
-
-def email(minlimit):
-    subject = 'Icon Faucet: Not enough icx'
-    message = f'Score has less than {minlimit} icx. Please add icx to score.'
-    email_from = settings.EMAIL_HOST_USER
-    send_mail(subject, message, email_from, recipient)
-    print('email has been sent.')
-    return HttpResponse('Email has been sent to admins.')
-
-
-def update_admin(request, cmd, email):
-    if cmd == 'add':
-        recipient.append(email)
-    elif cmd == 'delete':
-        recipient.remove(email)
-
-    return HttpResponse(str(recipient))
-
-
-def get_current_balance(request):
-    result = utils.get_block_balance()
-    return HttpResponse(
-        f'<div>Score: {default_score}</div>\
-        <br>\
-        <div>Current Balance:</div>\
-        <div style="font-weight:bold;">{result}</div>')
 
 
 @csrf_exempt  # need to think about security
@@ -163,9 +132,8 @@ def req_icx(request, to_address, value):
     if (response['block_balance'] < block_icx_warning_minlimit):
         # call send_email function
         email(str(block_icx_warning_minlimit))
-        return HttpResponse(
-            'Not enough icx in block - block_icx_warning_minlimit : ' + \
-            block_limit)
+        return HttpResponse(f'Not enough icx in block - \
+            block_icx_warning_minlimit : {block_limit}')
 
     # transfer icx only when wallet's balance is under the limit
     if (response['wallet_balance'] > wallet_icx_maxlimit):
