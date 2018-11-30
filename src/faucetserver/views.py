@@ -167,7 +167,7 @@ def req_icx(request, to_address, value):
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
     else:
-        insertDB_transaction(response['tx_result']['txHash'], response['tx_result']
+        utils.insertDB_transaction(response['tx_result']['txHash'], response['tx_result']
                              ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
 
     page = '<div></div>'+str(response['latest_block_info'])+'<div></div>'+'block height : '+str(response['latest_block_height'])+'<div></div>'+' find_transaction : '+str(response['wallet_latest_transaction'])+'<div>tx_hash : </div>'+response['tx_hash'] + '<div></div>'+'block:' + \
