@@ -68,15 +68,6 @@ def update_wallet(request):
         return HttpResponse(utils.update_wallet(request))
 
 
-def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
-   print('insertDB_transaction')
-   query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
-   cursor.execute(query,(txhash, block, score, wallet, amount, txfee))
-   connections['default'].commit()
-
-   return 'success'
-
-
 def transfer_stat(request):
     return HttpResponse(utils.transfer_stat(request))
 
@@ -96,18 +87,18 @@ def get_limit(request):
 
 
 @csrf_exempt  # need to think about security
-def req_icx(request, to_address, value):
+def req_icx(request):
 
     wallet_icx_maxlimit = 100 * 10 ** 18
     block_icx_warning_minlimit = 10 * 10 ** 18
-    value = value
+    value = 0.1
 
-    # if request.method == 'POST':
-    #     print('req', request)
-    #     print('method', request.method)
-    #     req_body = ast.literal_eval(request.body.decode('utf-8'))
-    #     value = req_body['value']
-    #     print('POST VALUE', value)
+    # Update game score
+    if request.method == 'POST':
+        req_body = ast.literal_eval(request.body.decode('utf-8'))
+        response['game_score'] = req_body['game_score']
+        to_address = req_body['wallet']
+        value = int(response['game_score'])
 
     response['block_balance'] = int(utils.get_block_balance(), 16)
     response['wallet_balance'] = int(
@@ -124,9 +115,6 @@ def req_icx(request, to_address, value):
         response['transaction_result'] = 'success'
     
     print(response['tx_result'])
-
-    # Add game_score key to result
-    response['game_score'] = None
 
     # send a email to admin when block doesn't have enough icx
     if (response['block_balance'] < block_icx_warning_minlimit):
@@ -153,14 +141,14 @@ def req_icx(request, to_address, value):
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
     else:
-        utils.insertDB_transaction(response['tx_result']['txHash'], response['tx_result']
-                             ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
-
-    if request.method == 'POST':
-        req_body = ast.literal_eval(request.body.decode('utf-8'))
-        response['game_score'] = req_body['game_score']
+        utils.insertDB_transaction(
+            response['tx_result']['txHash'],
+            response['tx_result']['blockHeight'],
+            default_score, to_address, value*0.1, 0.0001, 
+            response['game_score'])
 
     result_page = {
+        'wallet_address': str(response['wallet_address']),
         'wallet_balance': str(response['wallet_balance']),
         'latest_transaction': str(response['wallet_latest_transaction']),
         'transaction_result': response['transaction_result'],

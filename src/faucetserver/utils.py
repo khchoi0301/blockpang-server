@@ -151,10 +151,10 @@ def insertDB_users(request, wallet):
 
     return 'USERS DB updated'
 
-def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
+def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
     print('insertDB_transaction')
-    query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
-    cursor.execute(query,(txhash, block, score, wallet, amount, txfee))
+    query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee, gscore) VALUES (%s,%s,%s,%s,%s,%s,%s)"
+    cursor.execute(query,(txhash, block, score, wallet, amount, txfee, gscore))
     connections['default'].commit()
 
     return 'success'
