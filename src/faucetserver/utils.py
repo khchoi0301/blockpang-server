@@ -3,6 +3,10 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import os
 import urllib.request
+import time
+import ast
+from django.db import connections
+
 from django.conf import settings
 
 from iconsdk.wallet.wallet import KeyWallet
@@ -16,6 +20,8 @@ from iconsdk.builder.transaction_builder import (
     CallTransactionBuilder,
     MessageTransactionBuilder
 )
+
+cursor = connections['default'].cursor()
 
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
@@ -35,7 +41,23 @@ def create_wallet(request):
     # Let try getting the private key
     new_wallet['key'] = wallet.get_private_key()
 
+    insertDB_users(request, new_wallet['address'])
+
     return str(new_wallet)
+
+
+def insertDB_users(request, wallet):
+    print('insertDB_users')
+    if request.method == 'POST':
+        req_body = ast.literal_eval(request.body.decode('utf-8'))
+
+    query = "INSERT INTO users (service_provider, wallet, email, user_pid) VALUES (%s,%s,%s,%s)"
+    cursor.execute(query, (req_body['service_provider'],
+                           wallet, req_body['email'], req_body['user_pid']))
+    connections['default'].commit()
+
+    return
+
 
 def get_limit():
     """ Get limits """
@@ -136,3 +158,21 @@ def get_latest_block_height():
 def get_latest_block():
     """Get the latest block."""
     return icon_service.get_block('latest')
+
+
+def get_transaction_result(tx_hash):
+    # check the transaction result
+    try:
+        time.sleep(6)
+        print('6s')
+        tx_result = icon_service.get_transaction_result(tx_hash)
+    except:
+        time.sleep(6)
+        print('12s')
+        try:
+            tx_result = icon_service.get_transaction_result(tx_hash)
+        except:
+            tx_result = {'failure': {
+                'code': '0x7d65', 'message': "Please wait for few blocks to be created before requesting again"}}
+
+    return tx_result

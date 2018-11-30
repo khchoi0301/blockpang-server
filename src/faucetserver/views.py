@@ -8,7 +8,6 @@ import ast
 import datetime
 import json
 import os
-import time
 import urllib.request
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
@@ -23,25 +22,26 @@ from iconsdk.builder.transaction_builder import (
 )
 from . import utils
 
-
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 recipient = settings.RECIPIENT_LIST
 
+
 def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
     print('insertDB_transaction')
     query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
-    cursor.execute(query,(txhash, block, score, wallet, amount, txfee))
+    cursor.execute(query, (txhash, block, score, wallet, amount, txfee))
     connections['default'].commit()
 
     return 'success'
+
 
 def query_transaction(request):
     json_data = []
     query = 'SELECT * FROM transaction;'
     cursor.execute(query)
-    row_headers=[x[0] for x in cursor.description]
+    row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
 
     for result in query_result:
@@ -54,7 +54,7 @@ def query_user(request):
     json_data = []
     query = 'SELECT * from users;'
     cursor.execute(query)
-    row_headers=[x[0] for x in cursor.description]
+    row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
 
     for result in query_result:
@@ -68,12 +68,28 @@ def index(request):
     return HttpResponse(page)
 
 
+@csrf_exempt  # need to think about security
 def create_wallet(request):
     return HttpResponse(utils.create_wallet(request))
 
 
+# def insertDB_users(request):
+#     print('insertDB_users', request.body)
+
+#     if request.method == 'POST':
+#         req_body = ast.literal_eval(request.body.decode('utf-8'))
+
+#     query = "INSERT INTO users (service_provider, wallet, email, user_pid) VALUES (%s,%s,%s,%s)"
+#     cursor.execute(query, (req_body['service_provider'],
+#                            req_body['wallet'], req_body['email'], req_body['user_pid']))
+#     connections['default'].commit()
+
+#     return 'success'
+
+
 def set_limit(request, amount_limit, block_limit):
     return HttpResponse(utils.set_limit(request, amount_limit, block_limit))
+
 
 def get_limit(request):
     limit = utils.get_limit()
@@ -143,7 +159,7 @@ def req_icx(request, to_address, value):
     response['tx_hash'] = utils.send_transaction(request, to_address, value)
 
     # check the transaction result
-    response['tx_result'] = check_transaction_result(response['tx_hash'])
+    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
     print('result', response['tx_result'])
 
     # check results
@@ -157,12 +173,12 @@ def req_icx(request, to_address, value):
     response['wallet_balance'] = int(
         utils.get_wallet_balance(request, to_address), 16)
 
-
-    if not response['tx_result']['eventLogs']:         
+    if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
-    else :    
-        insertDB_transaction(response['tx_result']['txHash'],response['tx_result']['blockHeight'],default_score,to_address,value*0.1,0.0001)
-    
+    else:
+        insertDB_transaction(response['tx_result']['txHash'], response['tx_result']
+                             ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
+
     page = '<div></div>'+str(response['latest_block_info'])+'<div></div>'+'block height : '+str(response['latest_block_height'])+'<div></div>'+' find_transaction : '+str(response['wallet_latest_transaction'])+'<div>tx_hash : </div>'+response['tx_hash'] + '<div></div>'+'block:' + \
         '<div></div>'+default_score + ' // balance is ' + \
         str(response['block_balance']/10**18) + '<div>to:</div>' + \
@@ -170,19 +186,3 @@ def req_icx(request, to_address, value):
         str(response['wallet_balance']/10**18)
 
     return HttpResponse(str(response['tx_result']))
-
-def check_transaction_result(tx_hash):
-    # check the transaction result
-    try:
-        time.sleep(6)
-        print('6s')
-        tx_result = icon_service.get_transaction_result(tx_hash)
-    except:
-        time.sleep(6)
-        print('12s')
-        try:
-            tx_result = icon_service.get_transaction_result(tx_hash)
-        except:
-            tx_result = {'failure': { 'code': '0x7d65', 'message': "Please wait for few blocks to be created before requesting again"}}
-
-    return tx_result
