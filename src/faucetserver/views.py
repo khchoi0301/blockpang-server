@@ -153,11 +153,9 @@ def req_icx(request, to_address, value):
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
     else:
-        insertDB_transaction(
-            response['tx_result']['txHash'], response['tx_result']
-            ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
+        utils.insertDB_transaction(response['tx_result']['txHash'], response['tx_result']
+                             ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
 
-    # Update game_score
     if request.method == 'POST':
         req_body = ast.literal_eval(request.body.decode('utf-8'))
         response['game_score'] = req_body['game_score']

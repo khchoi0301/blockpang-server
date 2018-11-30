@@ -69,32 +69,47 @@ def update_admin(request, cmd, email):
 def transfer_stat(request):
     print('create transfer statistics',request)
 
-    query = 'SELECT * FROM transaction;'
-    cursor.execute(query)
-    query_result = cursor.fetchall()
+    stat_result = {}
 
+    query = ["""SELECT SUM(amount) FROM transaction WHERE 	
+            timestamp >=  current_date 
+			and timestamp < current_date + 1;""",
+    """SELECT SUM(amount) FROM transaction;""",
+    """SELECT count(amount) FROM transaction WHERE 	
+            timestamp >=  current_date 
+			and timestamp < current_date + 1;""",
+      """SELECT count(amount) FROM transaction;"""      
+    ]
+    
 
-    return HttpResponse(str(query_result))
+    cursor.execute(query[0])
+    stat_result['daily_transfer_amount'] = cursor.fetchall()[0][0]
+
+    cursor.execute(query[1])
+    stat_result['total_transfer_amount'] = cursor.fetchall()[0][0]
+
+    cursor.execute(query[2])
+    stat_result['daily_transfer'] = cursor.fetchall()[0][0]
+
+    cursor.execute(query[3])
+    stat_result['total_transfer'] = cursor.fetchall()[0][0]
+
+    return HttpResponse(str(stat_result))
 
 
 def user_stat(request):
     print('create users statistics',request)
-
     stat_result = {}
+    query = ["""    SELECT COUNT(wallet) FROM users     """,
+    """     SELECT date_trunc('day', timestamp), COUNT(*) as count FROM users
+    GROUP BY date_trunc('day', timestamp)    """]
+   
 
-    # query = """
-    # SELECT COUNT(wallet) FROM users
-    # """
+    cursor.execute(query[0])
+    stat_result['tatal_users'] = cursor.fetchall()[0][0]
 
-    query = """
-    SELECT to_char(date_trunc('day', (current_date - offs)), 'YYYY-MM-DD')
-    AS date 
-    FROM generate_series(0, 365, 1) 
-    AS offs
-    """
-
-    cursor.execute(query)
-    stat_result['tatal_users'] = cursor.fetchall()
+    cursor.execute(query[1])
+    stat_result['daily_users'] = cursor.fetchall()
 
     return HttpResponse(str(stat_result))
 
@@ -136,7 +151,14 @@ def insertDB_users(request, wallet):
 
     return 'USERS DB updated'
 
+def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
+    print('insertDB_transaction')
+    query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
+    cursor.execute(query,(txhash, block, score, wallet, amount, txfee))
+    connections['default'].commit()
 
+    return 'success'
+    
 def get_limit():
     """ Get limits """
     call = CallBuilder().from_(wallet_from)\
