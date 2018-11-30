@@ -26,6 +26,7 @@ cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 recipient = settings.RECIPIENT_LIST
+response = {}
 
 
 # def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
@@ -138,37 +139,45 @@ def req_icx(request, to_address, value):
     block_icx_warning_minlimit = 10 * 10 ** 18
     value = value
 
-    if request.method == 'POST':
-        print('req', request)
-        print('method', request.method)
-        req_body = ast.literal_eval(request.body.decode('utf-8'))
-        value = req_body['value']
-        print('POST VALUE', value)
+    # if request.method == 'POST':
+    #     print('req', request)
+    #     print('method', request.method)
+    #     req_body = ast.literal_eval(request.body.decode('utf-8'))
+    #     value = req_body['value']
+    #     print('POST VALUE', value)
 
-    response = {}
     response['block_balance'] = int(utils.get_block_balance(), 16)
     response['wallet_balance'] = int(
         utils.get_wallet_balance(request, to_address), 16)
+
+    # transfer icx
+    response['tx_hash'] = utils.send_transaction(request, to_address, value)
+
+    # Add transaction_result key to result
+    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
+    if (str(response['tx_result']['status']) == 0):
+        response['transaction_result'] = 'failed'
+    else:
+        response['transaction_result'] = 'success'
+    
+    print(response['tx_result'])
+
+    # Add game_score key to result
+    response['game_score'] = None
 
     # send a email to admin when block doesn't have enough icx
     if (response['block_balance'] < block_icx_warning_minlimit):
         # call send_email function
         email(str(block_icx_warning_minlimit))
-
-        return HttpResponse('Not enough icx in block - block_icx_warning_minlimit : ' + block_limit)
+        return HttpResponse(
+            'Not enough icx in block - block_icx_warning_minlimit : ' + \
+            block_limit)
 
     # transfer icx only when wallet's balance is under the limit
     if (response['wallet_balance'] > wallet_icx_maxlimit):
         return HttpResponse('You have too much icx in your wallet!!')
 
-    # transfer icx
-    response['tx_hash'] = utils.send_transaction(request, to_address, value)
-
-    # check the transaction result
-    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
-    print('result', response['tx_result'])
-
-    # check results
+    # Check result
     response['block_address'] = default_score
     response['wallet_address'] = to_address
     response['wallet_latest_transaction'] = int(utils.get_latest_transaction(
@@ -182,13 +191,20 @@ def req_icx(request, to_address, value):
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
     else:
-        insertDB_transaction(response['tx_result']['txHash'], response['tx_result']
-                             ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
+        insertDB_transaction(
+            response['tx_result']['txHash'], response['tx_result']
+            ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
 
-    page = '<div></div>'+str(response['latest_block_info'])+'<div></div>'+'block height : '+str(response['latest_block_height'])+'<div></div>'+' find_transaction : '+str(response['wallet_latest_transaction'])+'<div>tx_hash : </div>'+response['tx_hash'] + '<div></div>'+'block:' + \
-        '<div></div>'+default_score + ' // balance is ' + \
-        str(response['block_balance']/10**18) + '<div>to:</div>' + \
-        str(to_address)+' // balance is ' + \
-        str(response['wallet_balance']/10**18)
+    # Update game_score
+    if request.method == 'POST':
+        req_body = ast.literal_eval(request.body.decode('utf-8'))
+        response['game_score'] = req_body['game_score']
 
-    return HttpResponse(str(response['tx_result']))
+    result_page = {
+        'wallet_balance': str(response['wallet_balance']),
+        'latest_transaction': str(response['wallet_latest_transaction']),
+        'transaction_result': response['transaction_result'],
+        'game_score': response['game_score']
+        }
+
+    return HttpResponse(str(result_page))
