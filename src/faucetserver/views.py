@@ -22,42 +22,38 @@ from iconsdk.builder.transaction_builder import (
 )
 from . import utils
 
+
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 recipient = settings.RECIPIENT_LIST
-
-
-
-def query_transaction(request):
-    json_data = []
-    query = 'SELECT * FROM transaction;'
-    cursor.execute(query)
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-
-    for result in query_result:
-        json_data.append(dict(zip(row_headers, result)))
-
-    return HttpResponse(str(json_data))
-
-
-def query_user(request):
-    json_data = []
-    query = 'SELECT * from users;'
-    cursor.execute(query)
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-
-    for result in query_result:
-        json_data.append(dict(zip(row_headers, result)))
-
-    return HttpResponse(str(json_data))
+response = {}
 
 
 def index(request):
-    page = '<div> Hello Admins: </div>' + str(recipient)
+    page = f'<div> Hello Admins: </div>{str(recipient)}'
     return HttpResponse(page)
+
+
+def db_query(request, table):
+    return HttpResponse(utils.db_query(request, table))
+
+
+def email(minlimit):
+    return HttpResponse(utils.email(minlimit))
+
+
+def update_admin(request, cmd, email):
+    return HttpResponse(utils.update_admin(request, cmd, email))
+
+
+def get_current_balance(request):
+    result = utils.get_block_balance()
+    return HttpResponse(
+        f'<div>Score: {default_score}</div>\
+        <br>\
+        <div>Current Balance:</div>\
+        <div style="font-weight:bold;">{result}</div>')
 
 
 @csrf_exempt  # need to think about security
@@ -65,10 +61,20 @@ def create_wallet(request):
     if request.method == 'POST':
         return HttpResponse(utils.create_wallet(request))
 
+
 @csrf_exempt  # need to think about security
 def update_wallet(request):
     if request.method == 'POST':
         return HttpResponse(utils.update_wallet(request))
+
+
+def insertDB_transaction(txhash, block, score, wallet, amount, txfee):
+   print('insertDB_transaction')
+   query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee) VALUES (%s,%s,%s,%s,%s,%s)"
+   cursor.execute(query,(txhash, block, score, wallet, amount, txfee))
+   connections['default'].commit()
+
+   return 'success'
 
 
 def transfer_stat(request):
@@ -89,33 +95,6 @@ def get_limit(request):
     return HttpResponse(str(limit))
 
 
-def email(minlimit):
-    subject = 'Icon Faucet: Not enough icx'
-    message = f'Score has less than {minlimit} icx. Please add icx to score.'
-    email_from = settings.EMAIL_HOST_USER
-    send_mail(subject, message, email_from, recipient)
-    print('email has been sent.')
-    return HttpResponse('Email has been sent to admins.')
-
-
-def update_admin(request, cmd, email):
-    if cmd == 'add':
-        recipient.append(email)
-    elif cmd == 'delete':
-        recipient.remove(email)
-
-    return HttpResponse(str(recipient))
-
-
-def get_current_balance(request):
-    result = utils.get_block_balance()
-    return HttpResponse(
-        f'<div>Score: {default_score}</div>\
-        <br>\
-        <div>Current Balance:</div>\
-        <div style="font-weight:bold;">{result}</div>')
-
-
 @csrf_exempt  # need to think about security
 def req_icx(request, to_address, value):
 
@@ -123,37 +102,44 @@ def req_icx(request, to_address, value):
     block_icx_warning_minlimit = 10 * 10 ** 18
     value = value
 
-    if request.method == 'POST':
-        print('req', request)
-        print('method', request.method)
-        req_body = ast.literal_eval(request.body.decode('utf-8'))
-        value = req_body['value']
-        print('POST VALUE', value)
+    # if request.method == 'POST':
+    #     print('req', request)
+    #     print('method', request.method)
+    #     req_body = ast.literal_eval(request.body.decode('utf-8'))
+    #     value = req_body['value']
+    #     print('POST VALUE', value)
 
-    response = {}
     response['block_balance'] = int(utils.get_block_balance(), 16)
     response['wallet_balance'] = int(
         utils.get_wallet_balance(request, to_address), 16)
+
+    # transfer icx
+    response['tx_hash'] = utils.send_transaction(request, to_address, value)
+
+    # Add transaction_result key to result
+    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
+    if (str(response['tx_result']['status']) == 0):
+        response['transaction_result'] = 'failed'
+    else:
+        response['transaction_result'] = 'success'
+    
+    print(response['tx_result'])
+
+    # Add game_score key to result
+    response['game_score'] = None
 
     # send a email to admin when block doesn't have enough icx
     if (response['block_balance'] < block_icx_warning_minlimit):
         # call send_email function
         email(str(block_icx_warning_minlimit))
-
-        return HttpResponse('Not enough icx in block - block_icx_warning_minlimit : ' + block_limit)
+        return HttpResponse(f'Not enough icx in block - \
+            block_icx_warning_minlimit : {block_limit}')
 
     # transfer icx only when wallet's balance is under the limit
     if (response['wallet_balance'] > wallet_icx_maxlimit):
         return HttpResponse('You have too much icx in your wallet!!')
 
-    # transfer icx
-    response['tx_hash'] = utils.send_transaction(request, to_address, value)
-
-    # check the transaction result
-    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
-    print('result', response['tx_result'])
-
-    # check results
+    # Check result
     response['block_address'] = default_score
     response['wallet_address'] = to_address
     response['wallet_latest_transaction'] = int(utils.get_latest_transaction(
@@ -170,10 +156,15 @@ def req_icx(request, to_address, value):
         utils.insertDB_transaction(response['tx_result']['txHash'], response['tx_result']
                              ['blockHeight'], default_score, to_address, value*0.1, 0.0001)
 
-    page = '<div></div>'+str(response['latest_block_info'])+'<div></div>'+'block height : '+str(response['latest_block_height'])+'<div></div>'+' find_transaction : '+str(response['wallet_latest_transaction'])+'<div>tx_hash : </div>'+response['tx_hash'] + '<div></div>'+'block:' + \
-        '<div></div>'+default_score + ' // balance is ' + \
-        str(response['block_balance']/10**18) + '<div>to:</div>' + \
-        str(to_address)+' // balance is ' + \
-        str(response['wallet_balance']/10**18)
+    if request.method == 'POST':
+        req_body = ast.literal_eval(request.body.decode('utf-8'))
+        response['game_score'] = req_body['game_score']
 
-    return HttpResponse(str(response['tx_result']))
+    result_page = {
+        'wallet_balance': str(response['wallet_balance']),
+        'latest_transaction': str(response['wallet_latest_transaction']),
+        'transaction_result': response['transaction_result'],
+        'game_score': response['game_score']
+        }
+
+    return HttpResponse(str(result_page))

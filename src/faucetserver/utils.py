@@ -1,13 +1,12 @@
+from django.db import connections
+from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+import ast
 import os
 import urllib.request
 import time
-import ast
-from django.db import connections
-
-from django.conf import settings
 
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
@@ -22,15 +21,49 @@ from iconsdk.builder.transaction_builder import (
 )
 
 cursor = connections['default'].cursor()
-
+recipient = settings.RECIPIENT_LIST
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 
 keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore2')
-print('keypath', keypath)
 wallet = KeyWallet.load(keypath, "@icon222")
 wallet_from = wallet.get_address()
 
+
+def db_query(request, table):
+    query = ['SELECT * FROM transaction;', 'SELECT * from users;']
+    json_data = []
+
+    if (table == 'transaction'):
+        print('---querying transactionDB---')
+        cursor.execute(query[0])
+    elif (table == 'users'):
+        print('---querying usersDB---')
+        cursor.execute(query[1])
+    
+    row_headers = [x[0] for x in cursor.description]
+    query_result = cursor.fetchall()
+    for result in query_result:
+        json_data.append(dict(zip(row_headers, result)))
+        
+    return HttpResponse(str(json_data))
+
+
+def email(minlimit):
+    subject = 'Icon Faucet: Not enough icx'
+    message = f'Score has less than {minlimit} icx. Please add icx to score.'
+    email_from = settings.EMAIL_HOST_USER
+    send_mail(subject, message, email_from, recipient)
+    print('email has been sent.')
+    return HttpResponse('Email has been sent to admins.')
+
+
+def update_admin(request, cmd, email):
+    if cmd == 'add':
+        recipient.append(email)
+    elif cmd == 'delete':
+        recipient.remove(email)
+    return HttpResponse(str(recipient))
 
 
 def transfer_stat(request):
