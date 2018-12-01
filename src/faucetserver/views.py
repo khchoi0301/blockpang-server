@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 from django.conf import settings
@@ -34,7 +34,7 @@ def index(request):
 
 
 def db_query(request, table):
-    return HttpResponse(utils.db_query(request, table))
+    return JsonResponse(utils.db_query(request, table), safe=False)
 
 
 def email(minlimit):
@@ -42,51 +42,51 @@ def email(minlimit):
 
 
 def update_admin(request, cmd, email):
-    return HttpResponse(utils.update_admin(request, cmd, email))
+    return JsonResponse(utils.update_admin(request, cmd, email), safe=False)
 
 
 def get_current_balance(request):
     result = utils.get_block_balance()
-    return HttpResponse(
-        f'<div>Score: {default_score}</div>\
-        <br>\
-        <div>Current Balance:</div>\
-        <div style="font-weight:bold;">{result}</div>')
+    return JsonResponse({
+        'default_score': default_score, 
+        'current_balance': result
+    })
 
 
 def get_highest_gscores(request):
-    return HttpResponse(utils.get_highest_gscores(request))
+    data = utils.get_highest_gscores(request)
+    return JsonResponse(data, safe=False)
 
 
 @csrf_exempt  # need to think about security
 def create_wallet(request):
     if request.method == 'POST':
-        return HttpResponse(utils.create_wallet(request))
+        return JsonResponse(utils.create_wallet(request))
 
 
 @csrf_exempt  # need to think about security
 def update_wallet(request):
     if request.method == 'POST':
-        return HttpResponse(utils.update_wallet(request))
+        return JsonResponse(utils.update_wallet(request))
 
 
 def transfer_stat(request):
-    return HttpResponse(utils.transfer_stat(request))
+    return JsonResponse(utils.transfer_stat(request), safe=False)
 
 
 def user_stat(request):
-    return HttpResponse(utils.user_stat(request))
+    return JsonResponse(utils.user_stat(request))
 
 
 def set_limit(request, amount_limit, block_limit):
-    return HttpResponse(utils.set_limit(request, amount_limit, block_limit))
+    return JsonResponse(utils.set_limit(request, amount_limit, block_limit))
 
 
 def get_limit(request):
     limit = utils.get_limit()
     limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
     limit['blocklimit'] = int(limit['blocklimit'], 16)
-    return HttpResponse(str(limit))
+    return JsonResponse(limit)
 
 
 @csrf_exempt  # need to think about security
@@ -114,7 +114,7 @@ def req_icx(request):
 
     # Add transaction_result key to result
     response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
-    if (str(response['tx_result']['status']) == 0):
+    if (int(response['tx_result']['status']) == 0):
         response['transaction_result'] = 'failed'
     else:
         response['transaction_result'] = 'success'
@@ -160,4 +160,4 @@ def req_icx(request):
         'game_score': response['game_score']
     }
 
-    return HttpResponse(str(result_page))
+    return JsonResponse(result_page)

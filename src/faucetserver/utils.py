@@ -35,7 +35,7 @@ def db_query(request, table):
         'SELECT * FROM transaction;',
         'SELECT * from users;']
 
-    json_data = []
+    data = []
 
     if (table == 'transaction'):
         print('===querying transactionDB===')
@@ -47,8 +47,8 @@ def db_query(request, table):
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     for result in query_result:
-        json_data.append(dict(zip(row_headers, result)))
-    return HttpResponse(str(json_data))
+        data.append(dict(zip(row_headers, result)))
+    return data
 
 
 def email(minlimit):
@@ -57,7 +57,7 @@ def email(minlimit):
     email_from = settings.EMAIL_HOST_USER
     send_mail(subject, message, email_from, recipient)
     print('===SUCCESS: email has been sent.===')
-    return HttpResponse('Email has been sent to admins.')
+    return 'Email has been sent to admins.'
 
 
 def update_admin(request, cmd, email):
@@ -75,7 +75,7 @@ def update_admin(request, cmd, email):
         except ValueError:
             print(f'===ERROR: {email} is not in admin list.===')
 
-    return HttpResponse(str(recipient))
+    return recipient
 
 
 def get_highest_gscores(request):
@@ -88,14 +88,13 @@ def get_highest_gscores(request):
         limit 10;
     '''
 
-    json_data = []
+    data = []
     cursor.execute(query)
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     for result in query_result:
-        json_data.append(dict(zip(row_headers, result)))
-
-    return HttpResponse(str(json_data))
+        data.append(dict(zip(row_headers, result)))
+    return data
 
 
 def transfer_stat(request):
@@ -149,7 +148,7 @@ def transfer_stat(request):
     cursor.execute(query[4])
     stat_result['test'] = cursor.fetchall()
 
-    return HttpResponse(str(stat_result))
+    return stat_result
 
 
 def user_stat(request):
@@ -165,22 +164,13 @@ def user_stat(request):
         '''
     ]
 
-
     cursor.execute(query[0])
-    stat_result['tatal_users'] = cursor.fetchall()[0][0]
+    stat_result['total_users'] = cursor.fetchall()[0][0]
 
     cursor.execute(query[1])
     stat_result['daily_users'] = cursor.fetchall()
 
-    return HttpResponse(str(stat_result))
-
-
-def update_wallet(request):
-
-    print('Update a wallet to database',request)
-    insertDB_users(request,'request should includes wallet address')
-
-    return 'success'
+    return stat_result
 
 
 def create_wallet(request):
@@ -192,7 +182,13 @@ def create_wallet(request):
     new_wallet['key'] = wallet.get_private_key()
 
     insertDB_users(request, new_wallet['address'])
-    return str(new_wallet)
+    return new_wallet
+
+
+def update_wallet(request):
+    print('Update a wallet to database',request)
+    insertDB_users(request,'request should includes wallet address')
+    return '===SUCCESS: Wallet has been updated.==='
 
 
 def insertDB_users(request, wallet):
@@ -213,12 +209,11 @@ def insertDB_users(request, wallet):
         req_body['wallet'], req_body['email'], req_body['user_pid']))
     connections['default'].commit()
 
-    return 'USERS DB updated'
+    return '===SUCCESS: USERS DB updated==='
 
 
 def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
     print('insertDB_transaction')
-
 
     query = '''
         INSERT INTO transaction 
@@ -229,7 +224,7 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
     cursor.execute(query,(txhash, block, score, wallet, amount, txfee, gscore))
 
     connections['default'].commit()
-    return 'success'
+    return '===SUCCESS: Transaction DB has been updated.==='
 
 
 def get_limit():
@@ -263,7 +258,7 @@ def set_limit(request, amount_limit, block_limit):
     # Sends the transaction
     tx_hash = str(icon_service.send_transaction(signed_transaction))
     print('set_limit complete', tx_hash)  # added
-    return str(limit_setting)
+    return limit_setting
 
 
 def get_block_balance():
