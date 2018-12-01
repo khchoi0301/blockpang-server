@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
 from django.conf import settings
@@ -29,12 +29,12 @@ recipient = settings.RECIPIENT_LIST
 
 
 def index(request):
-    page = f'<div> Hello Admins: </div>{str(recipient)}'
+    page = f'<div> Hello Admins! <br><br></div>{str(recipient)}'
     return HttpResponse(page)
 
 
 def db_query(request, table):
-    return HttpResponse(utils.db_query(request, table))
+    return JsonResponse(utils.db_query(request, table), safe=False)
 
 
 def email(minlimit):
@@ -42,53 +42,52 @@ def email(minlimit):
 
 
 def update_admin(request, cmd, email):
-    return HttpResponse(utils.update_admin(request, cmd, email))
+    return JsonResponse(utils.update_admin(request, cmd, email), safe=False)
 
 
 def get_current_balance(request):
-    result = utils.get_block_balance()
-    return HttpResponse(
-        f'<div>Score: {default_score}</div>\
-        <br>\
-        <div>Current Balance:</div>\
-        <div style="font-weight:bold;">{result}</div>')
+    return JsonResponse({
+        'default_score': default_score, 
+        'current_balance': utils.get_block_balance()
+    })
 
 
 def get_highest_gscores(request):
-    return HttpResponse(utils.get_highest_gscores(request))
+    data = utils.get_highest_gscores(request)
+    return JsonResponse(data, safe=False)
 
 
 @csrf_exempt  # need to think about security
 def create_wallet(request):
     if request.method == 'POST':
-        return HttpResponse(utils.create_wallet(request))
+        return JsonResponse(utils.create_wallet(request))
 
 
 @csrf_exempt  # need to think about security
 def update_wallet(request):
     if request.method == 'POST':
-        return HttpResponse(utils.update_wallet(request))
+        return JsonResponse(utils.update_wallet(request), safe=False)
 
 
 @csrf_exempt  # need to think about security
 def transfer_stat(request):
-    return HttpResponse(utils.transfer_stat(request))
+    return JsonResponse(utils.transfer_stat(request), safe=False)
 
 
 @csrf_exempt  # need to think about security
 def user_stat(request):
-    return HttpResponse(utils.user_stat(request))
+    return JsonResponse(utils.user_stat(request))
 
 
 def set_limit(request, amount_limit, block_limit):
-    return HttpResponse(utils.set_limit(request, amount_limit, block_limit))
+    return JsonResponse(utils.set_limit(request, amount_limit, block_limit))
 
 
 def get_limit(request):
     limit = utils.get_limit()
     limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
     limit['blocklimit'] = int(limit['blocklimit'], 16)
-    return HttpResponse(str(limit))
+    return JsonResponse(limit)
 
 
 @csrf_exempt  # need to think about security
@@ -96,8 +95,8 @@ def req_icx(request):
 
     response = {}
 
-    wallet_icx_maxlimit = 100 * 10 ** 18
-    block_icx_warning_minlimit = 10 * 10 ** 18
+    wallet_max_limit = 100 * 10 ** 18
+    score_min_limit = 10 * 10 ** 18
     value = 0.1
 
     # Update game score
@@ -116,23 +115,27 @@ def req_icx(request):
 
     # Add transaction_result key to result
     response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
-    if (str(response['tx_result']['status']) == 0):
-        response['transaction_result'] = 'failed'
+    if (int(response['tx_result']['status']) == 0):
+        response['transaction_result'] = 'fail'
     else:
         response['transaction_result'] = 'success'
 
-    print(response['tx_result'])
-
-    # send a email to admin when block doesn't have enough icx
-    if (response['block_balance'] < block_icx_warning_minlimit):
-        # call send_email function
-        email(str(block_icx_warning_minlimit))
-        return HttpResponse(f'Not enough icx in block - \
-            block_icx_warning_minlimit : {block_limit}')
+    # send a email to admin when score doesn't have enough icx
+    if (response['block_balance'] < score_min_limit):
+        email(str(score_min_limit))
+        return JsonResponse({
+            'status': 'fail',
+            'reason': 'Not enough icx in score',
+            'error_log': f'Score has less than {score_min_limit}'
+            })
 
     # transfer icx only when wallet's balance is under the limit
-    if (response['wallet_balance'] > wallet_icx_maxlimit):
-        return HttpResponse('You have too much icx in your wallet!!')
+    if (response['wallet_balance'] > wallet_max_limit):
+        return JsonResponse({
+            'status': 'fail',
+            'reason': 'Too much icx in wallet',
+            'error_log': f'Wallet has more than {wallet_max_limit}'
+        })
 
     # Check result
     response['block_address'] = default_score
@@ -154,12 +157,17 @@ def req_icx(request):
             default_score, to_address, value*0.1, 0.0001,
             response['game_score'])
 
-    result_page = {
+    result = {
         'wallet_address': str(response['wallet_address']),
         'wallet_balance': str(response['wallet_balance']),
         'latest_transaction': str(response['wallet_latest_transaction']),
         'transaction_result': response['transaction_result'],
-        'game_score': response['game_score']
+        'game_score': response['game_score'],
     }
 
-    return HttpResponse(str(result_page))
+    if result['transaction_result'] == 'fail':
+        err = response['tx_result']['failure']['message']
+        err = err[23:]
+        result['error_log'] = err
+
+    return JsonResponse(result)
