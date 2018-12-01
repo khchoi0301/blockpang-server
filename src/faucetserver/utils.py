@@ -81,25 +81,25 @@ def get_highest_gscores(request):
     query_result = cursor.fetchall()
     for result in query_result:
         json_data.append(dict(zip(row_headers, result)))
-        
+
     return HttpResponse(str(json_data))
 
 
 def transfer_stat(request):
     print('create transfer statistics', request)
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    # req_body = ast.literal_eval(request.body.decode('utf-8'))
 
-    if req_body['date']:
-        date = req_body['date']
-    else:
-        date = 'current_date'
+    # if req_body['date']:
+    #     date = req_body['date']
+    # else:
+    #     date = 'current_date'
 
-    if req_body['user']:
-        user = req_body['user']
-    else:
-        user = '*'
+    # if req_body['user']:
+    #     user = req_body['user']
+    # else:
+    #     user = '*'
 
-    print(date, user)
+    # print(date, user)
 
     stat_result = {}
 
@@ -111,7 +111,9 @@ def transfer_stat(request):
         """SELECT count(amount) FROM transaction WHERE 	
             timestamp >=  current_date 
 			and timestamp < current_date + 1;""",
-        """SELECT count(amount) FROM transaction;"""
+        """SELECT count(amount) FROM transaction;""",
+        """SELECT count(transaction.amount) FROM transaction,users
+            WHERE transaction.wallet = users.wallet;"""
     ]
 
     cursor.execute(query[0])
@@ -125,6 +127,9 @@ def transfer_stat(request):
 
     cursor.execute(query[3])
     stat_result['total_transfer'] = cursor.fetchall()[0][0]
+
+    cursor.execute(query[4])
+    stat_result['test'] = cursor.fetchall()
 
     return HttpResponse(str(stat_result))
 
