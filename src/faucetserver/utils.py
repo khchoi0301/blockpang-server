@@ -7,7 +7,6 @@ import ast
 import os
 import urllib.request
 import time
-
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.icon_service import IconService
@@ -128,7 +127,8 @@ def transfer_stat(request):
             WHERE timestamp >=  current_date 
 			AND timestamp < current_date + 1;''',
 
-        '''SELECT count(amount) FROM transaction;'''      
+        'SELECT count(amount) FROM transaction;',
+
         '''SELECT count(transaction.amount) FROM transaction,users
             WHERE transaction.wallet = users.wallet;'''
     ]
@@ -332,6 +332,7 @@ def get_transaction_result(tx_hash):
         time.sleep(6)
         print('6s')
         tx_result = icon_service.get_transaction_result(tx_hash)
+
     except:
         time.sleep(6)
         print('12s')
