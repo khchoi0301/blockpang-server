@@ -66,7 +66,7 @@ def create_wallet(request):
 @csrf_exempt  # need to think about security
 def update_wallet(request):
     if request.method == 'POST':
-        return JsonResponse(utils.update_wallet(request))
+        return JsonResponse(utils.update_wallet(request), safe=False)
 
 
 def transfer_stat(request):
