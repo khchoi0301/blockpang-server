@@ -40,12 +40,12 @@ def db_query(request, table):
     elif (table == 'users'):
         print('---querying usersDB---')
         cursor.execute(query[1])
-    
+
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     for result in query_result:
         json_data.append(dict(zip(row_headers, result)))
-        
+
     return HttpResponse(str(json_data))
 
 
@@ -67,20 +67,33 @@ def update_admin(request, cmd, email):
 
 
 def transfer_stat(request):
-    print('create transfer statistics',request)
+    print('create transfer statistics', request)
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+
+    if req_body['date']:
+        date = req_body['date']
+    else:
+        date = 'current_date'
+
+    if req_body['user']:
+        user = req_body['user']
+    else:
+        user = '*'
+
+    print(date, user)
 
     stat_result = {}
 
-    query = ["""SELECT SUM(amount) FROM transaction WHERE 	
+    query = [
+        """SELECT SUM(amount) FROM transaction WHERE 	
             timestamp >=  current_date 
 			and timestamp < current_date + 1;""",
-    """SELECT SUM(amount) FROM transaction;""",
-    """SELECT count(amount) FROM transaction WHERE 	
+        """SELECT SUM(amount) FROM transaction;""",
+        """SELECT count(amount) FROM transaction WHERE 	
             timestamp >=  current_date 
 			and timestamp < current_date + 1;""",
-      """SELECT count(amount) FROM transaction;"""      
+        """SELECT count(amount) FROM transaction;"""
     ]
-    
 
     cursor.execute(query[0])
     stat_result['daily_transfer_amount'] = cursor.fetchall()[0][0]
@@ -98,12 +111,11 @@ def transfer_stat(request):
 
 
 def user_stat(request):
-    print('create users statistics',request)
+    print('create users statistics', request)
     stat_result = {}
     query = ["""    SELECT COUNT(wallet) FROM users     """,
-    """     SELECT date_trunc('day', timestamp), COUNT(*) as count FROM users
+             """     SELECT date_trunc('day', timestamp), COUNT(*) as count FROM users
     GROUP BY date_trunc('day', timestamp)    """]
-   
 
     cursor.execute(query[0])
     stat_result['tatal_users'] = cursor.fetchall()[0][0]
@@ -115,13 +127,14 @@ def user_stat(request):
 
 
 def update_wallet(request):
-    print('Update a wallet to database',request)
-    insertDB_users(request,'request should includes wallet address')
+    print('Update a wallet to database', request)
+    insertDB_users(request, 'request should includes wallet address')
 
     return 'success'
 
+
 def create_wallet(request):
-    print('Create a wallet',request)
+    print('Create a wallet', request)
     new_wallet = {}
 
     wallet = KeyWallet.create()
@@ -136,7 +149,7 @@ def create_wallet(request):
 
 
 def insertDB_users(request, wallet):
-    print('insertDB_users',request,wallet)
+    print('insertDB_users', request, wallet)
     req_body = ast.literal_eval(request.body.decode('utf-8'))
 
     try:
@@ -151,14 +164,17 @@ def insertDB_users(request, wallet):
 
     return 'USERS DB updated'
 
+
 def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
     print('insertDB_transaction')
     query = "INSERT INTO transaction (txhash, block, score, wallet, amount, txfee, gscore) VALUES (%s,%s,%s,%s,%s,%s,%s)"
-    cursor.execute(query,(txhash, block, score, wallet, amount, txfee, gscore))
+    cursor.execute(query, (txhash, block, score,
+                           wallet, amount, txfee, gscore))
     connections['default'].commit()
 
     return 'success'
-    
+
+
 def get_limit():
     """ Get limits """
     call = CallBuilder().from_(wallet_from)\

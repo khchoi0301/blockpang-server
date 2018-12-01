@@ -23,11 +23,9 @@ from iconsdk.builder.transaction_builder import (
 from . import utils
 
 
-cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 recipient = settings.RECIPIENT_LIST
-response = {}
 
 
 def index(request):
@@ -71,6 +69,7 @@ def update_wallet(request):
 def transfer_stat(request):
     return HttpResponse(utils.transfer_stat(request))
 
+
 def user_stat(request):
     return HttpResponse(utils.user_stat(request))
 
@@ -88,6 +87,8 @@ def get_limit(request):
 
 @csrf_exempt  # need to think about security
 def req_icx(request):
+
+    response = {}
 
     wallet_icx_maxlimit = 100 * 10 ** 18
     block_icx_warning_minlimit = 10 * 10 ** 18
@@ -113,7 +114,7 @@ def req_icx(request):
         response['transaction_result'] = 'failed'
     else:
         response['transaction_result'] = 'success'
-    
+
     print(response['tx_result'])
 
     # send a email to admin when block doesn't have enough icx
@@ -144,7 +145,7 @@ def req_icx(request):
         utils.insertDB_transaction(
             response['tx_result']['txHash'],
             response['tx_result']['blockHeight'],
-            default_score, to_address, value*0.1, 0.0001, 
+            default_score, to_address, value*0.1, 0.0001,
             response['game_score'])
 
     result_page = {
@@ -153,6 +154,6 @@ def req_icx(request):
         'latest_transaction': str(response['wallet_latest_transaction']),
         'transaction_result': response['transaction_result'],
         'game_score': response['game_score']
-        }
+    }
 
     return HttpResponse(str(result_page))
