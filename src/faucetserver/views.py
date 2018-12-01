@@ -114,7 +114,7 @@ def req_icx(request):
     # Add transaction_result key to result
     response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
     if (int(response['tx_result']['status']) == 0):
-        response['transaction_result'] = 'failed'
+        response['transaction_result'] = 'fail'
     else:
         response['transaction_result'] = 'success'
 
