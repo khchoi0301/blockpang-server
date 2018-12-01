@@ -69,10 +69,12 @@ def update_wallet(request):
         return JsonResponse(utils.update_wallet(request), safe=False)
 
 
+@csrf_exempt  # need to think about security
 def transfer_stat(request):
     return JsonResponse(utils.transfer_stat(request), safe=False)
 
 
+@csrf_exempt  # need to think about security
 def user_stat(request):
     return JsonResponse(utils.user_stat(request))
 

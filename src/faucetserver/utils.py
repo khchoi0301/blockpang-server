@@ -4,6 +4,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import ast
+import datetime
 import os
 import urllib.request
 import time
@@ -98,63 +99,47 @@ def get_highest_gscores(request):
 
 def transfer_stat(request):
     print('create transfer statistics', request)
-    # req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
 
-    # if req_body['date']:
-    #     date = req_body['date']
-    # else:
-    #     date = 'current_date'
-
-    # if req_body['user']:
-    #     user = req_body['user']
-    # else:
-    #     user = '*'
-
-    # print(date, user)
+    if req_body['user'] != '*':
+        isAll = True
+    else:
+        isAll = False
 
     stat_result = {}
 
     query = [
-
-        '''SELECT SUM(amount) FROM transaction
-            WHERE timestamp >=  current_date 
-		    AND timestamp < current_date + 1;
+        '''
+        SELECT SUM(transaction.amount),count(transaction.amount) 
+        FROM transaction,users
+        WHERE transaction.wallet = users.wallet
+        AND (users.email in (%s)) = (%s) ;
         ''',
-
-        'SELECT SUM(amount) FROM transaction;',
-
-        '''SELECT count(amount) FROM transaction 
-            WHERE timestamp >=  current_date 
-			AND timestamp < current_date + 1;''',
-
-        'SELECT count(amount) FROM transaction;',
-
-        '''SELECT count(transaction.amount) FROM transaction,users
-            WHERE transaction.wallet = users.wallet;'''
+        ''' 
+        SELECT date_trunc('day', transaction.timestamp),SUM(transaction.amount), count(transaction.amount) 
+        FROM transaction,users
+        WHERE transaction.wallet = users.wallet   
+        ADN (users.email in (%s)) = (%s) 
+        GROUP BY date_trunc('day', transaction.timestamp);  
+        '''
     ]
 
-    cursor.execute(query[0])
-    stat_result['daily_transfer_amount'] = cursor.fetchall()[0][0]
+    stat_result['user'] = req_body['user']
 
-    cursor.execute(query[1])
-    stat_result['total_transfer_amount'] = cursor.fetchall()[0][0]
+    cursor.execute(query[0], (req_body['user'], isAll,))
+    total = cursor.fetchall()[0]
+    stat_result['total_transfer_amount'] = total[0]
+    stat_result['total_transfer'] = total[1]
 
-    cursor.execute(query[2])
-    stat_result['daily_transfer'] = cursor.fetchall()[0][0]
-
-    cursor.execute(query[3])
-    stat_result['total_transfer'] = cursor.fetchall()[0][0]
-
-    cursor.execute(query[4])
-    stat_result['test'] = cursor.fetchall()
-
-    return stat_result
-
+    cursor.execute(query[1], (req_body['user'], isAll,))
+    total = cursor.fetchall()
+    stat_result['daily'] = total
+    return (str(stat_result))
 
 def user_stat(request):
     print('create users statistics', request)
     stat_result = {}
-
+    
     query = [
         '''SELECT COUNT(wallet) FROM users''',
 
