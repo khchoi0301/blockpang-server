@@ -43,7 +43,7 @@ def db_query(request, table):
     elif (table == 'users'):
         print('===querying usersDB===')
         cursor.execute(query[1])
-    
+
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     for result in query_result:
@@ -94,16 +94,30 @@ def get_highest_gscores(request):
     query_result = cursor.fetchall()
     for result in query_result:
         json_data.append(dict(zip(row_headers, result)))
-        
+
     return HttpResponse(str(json_data))
 
 
 def transfer_stat(request):
-    print('create transfer statistics',request)
+    print('create transfer statistics', request)
+    # req_body = ast.literal_eval(request.body.decode('utf-8'))
+
+    # if req_body['date']:
+    #     date = req_body['date']
+    # else:
+    #     date = 'current_date'
+
+    # if req_body['user']:
+    #     user = req_body['user']
+    # else:
+    #     user = '*'
+
+    # print(date, user)
 
     stat_result = {}
 
     query = [
+
         '''SELECT SUM(amount) FROM transaction
             WHERE timestamp >=  current_date 
 		    AND timestamp < current_date + 1;
@@ -116,6 +130,8 @@ def transfer_stat(request):
 			AND timestamp < current_date + 1;''',
 
         '''SELECT count(amount) FROM transaction;'''      
+        '''SELECT count(transaction.amount) FROM transaction,users
+            WHERE transaction.wallet = users.wallet;'''
     ]
 
     cursor.execute(query[0])
@@ -130,11 +146,14 @@ def transfer_stat(request):
     cursor.execute(query[3])
     stat_result['total_transfer'] = cursor.fetchall()[0][0]
 
+    cursor.execute(query[4])
+    stat_result['test'] = cursor.fetchall()
+
     return HttpResponse(str(stat_result))
 
 
 def user_stat(request):
-    print('create users statistics',request)
+    print('create users statistics', request)
     stat_result = {}
 
     query = [
@@ -146,6 +165,7 @@ def user_stat(request):
         '''
     ]
 
+
     cursor.execute(query[0])
     stat_result['tatal_users'] = cursor.fetchall()[0][0]
 
@@ -156,13 +176,15 @@ def user_stat(request):
 
 
 def update_wallet(request):
+
     print('Update a wallet to database',request)
     insertDB_users(request,'request should includes wallet address')
+
     return 'success'
 
 
 def create_wallet(request):
-    print('Create a wallet',request)
+    print('Create a wallet', request)
     new_wallet = {}
 
     wallet = KeyWallet.create()
@@ -174,7 +196,7 @@ def create_wallet(request):
 
 
 def insertDB_users(request, wallet):
-    print('insertDB_users',request,wallet)
+    print('insertDB_users', request, wallet)
     req_body = ast.literal_eval(request.body.decode('utf-8'))
 
     try:
@@ -193,8 +215,10 @@ def insertDB_users(request, wallet):
 
     return 'USERS DB updated'
 
+
 def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
     print('insertDB_transaction')
+
 
     query = '''
         INSERT INTO transaction 
@@ -203,9 +227,11 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
         '''
 
     cursor.execute(query,(txhash, block, score, wallet, amount, txfee, gscore))
+
     connections['default'].commit()
     return 'success'
-    
+
+
 def get_limit():
     '''Get limits.'''
     call = CallBuilder().from_(wallet_from)\
