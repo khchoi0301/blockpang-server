@@ -119,7 +119,7 @@ def transfer_stat(request):
         SELECT date_trunc('day', transaction.timestamp),SUM(transaction.amount), count(transaction.amount) 
         FROM transaction,users
         WHERE transaction.wallet = users.wallet   
-        ADN (users.email in (%s)) = (%s) 
+        AND (users.email in (%s)) = (%s) 
         GROUP BY date_trunc('day', transaction.timestamp);  
         '''
     ]
@@ -136,10 +136,11 @@ def transfer_stat(request):
     stat_result['daily'] = total
     return (str(stat_result))
 
+
 def user_stat(request):
     print('create users statistics', request)
     stat_result = {}
-    
+
     query = [
         '''SELECT COUNT(wallet) FROM users''',
 
@@ -171,8 +172,8 @@ def create_wallet(request):
 
 
 def update_wallet(request):
-    print('Update a wallet to database',request)
-    insertDB_users(request,'request should includes wallet address')
+    print('Update a wallet to database', request)
+    insertDB_users(request, 'request should includes wallet address')
     return '===SUCCESS: Wallet has been updated.==='
 
 
@@ -191,7 +192,7 @@ def insertDB_users(request, wallet):
         '''
 
     cursor.execute(query, (req_body['service_provider'],
-        req_body['wallet'], req_body['email'], req_body['user_pid']))
+                           req_body['wallet'], req_body['email'], req_body['user_pid']))
     connections['default'].commit()
 
     return '===SUCCESS: USERS DB updated==='
@@ -206,7 +207,8 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
         VALUES (%s,%s,%s,%s,%s,%s,%s)
         '''
 
-    cursor.execute(query,(txhash, block, score, wallet, amount, txfee, gscore))
+    cursor.execute(query, (txhash, block, score,
+                           wallet, amount, txfee, gscore))
 
     connections['default'].commit()
     return '===SUCCESS: Transaction DB has been updated.==='
@@ -218,7 +220,12 @@ def get_limit():
         .to(default_score)\
         .method('get_limit')\
         .build()
-    return icon_service.call(call)
+
+    limit = icon_service.call(call)
+    limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
+    limit['blocklimit'] = int(limit['blocklimit'], 16)
+
+    return limit
 
 
 def set_limit(request, amount_limit, block_limit):
@@ -252,7 +259,7 @@ def get_block_balance():
         .to(default_score)\
         .method('get_balance')\
         .build()
-    return icon_service.call(call)
+    return int(icon_service.call(call), 16) / 10 ** 18
 
 
 def get_wallet_balance(request, to_address):
@@ -262,7 +269,7 @@ def get_wallet_balance(request, to_address):
         .method('get_to')\
         .params({'_from': wallet_from, '_to': to_address})\
         .build()
-    return icon_service.call(call)
+    return int(icon_service.call(call), 16) / 10 ** 18
 
 
 def send_transaction(request, to_address, value):
@@ -294,7 +301,7 @@ def get_latest_transaction(request, to_address):
         .method('find_transaction')\
         .params({'_to': to_address})\
         .build()
-    return icon_service.call(call)
+    return int(icon_service.call(call), 16)
 
 
 def get_latest_block_height():
@@ -303,7 +310,7 @@ def get_latest_block_height():
         .to(default_score)\
         .method('block_height')\
         .build()
-    return icon_service.call(call)
+    return int(icon_service.call(call), 16)
 
 
 def get_latest_block():
@@ -325,7 +332,7 @@ def get_transaction_result(tx_hash):
             tx_result = icon_service.get_transaction_result(tx_hash)
         except:
             tx_result = {'failure': {
-                'code': '0x7d65', 
+                'code': '0x7d65',
                 'message': "Please wait for few blocks to be created \
                 before requesting again"}}
 
