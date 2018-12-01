@@ -36,7 +36,7 @@ RECIPIENT_LIST = ['charredbroccoli@gmail.com', 'khchoi0301@gmail.com']
 
 INSTALLED_APPS = [
     'faucetserver',
-
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -85,7 +86,7 @@ DATABASES = {
         'NAME': 'faucet',
         'USER': 'power_user',
         'PASSWORD': '@tamago111',
-        'HOST': 'ec2-54-180-106-121.ap-northeast-2.compute.amazonaws.com',
+        'HOST': '54.180.114.119',
         'PORT': '5432',
     }
 }
@@ -115,6 +116,15 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+# CORS_ORIGIN_WHITELIST = (
+#         'www.mysite.com',
+#         'www.anothersite.com'
+# )
 
 
 # Internationalization
