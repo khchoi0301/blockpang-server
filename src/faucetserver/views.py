@@ -1,8 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.mail import send_mail
+from django.core import serializers
 from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from django.db import connections
 import ast
 import datetime
@@ -22,29 +25,32 @@ from iconsdk.builder.transaction_builder import (
 )
 from . import utils
 
-
+ 
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
-recipient = settings.RECIPIENT_LIST
 
 
 def index(request):
-    page = f'<div> Hello Admins! <br><br></div>{str(recipient)}'
-    return HttpResponse(page)
+    staff_list = []
+    staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
+    for staff in staffs:
+        staff_list.append(staff)
+    print(staff_list)
+    return JsonResponse({'admin_email': staff_list})
 
 
+@staff_member_required
 def db_query(request, table):
     return JsonResponse(utils.db_query(request, table), safe=False)
 
 
-def email(minlimit):
-    return HttpResponse(utils.email(minlimit))
+@csrf_exempt
+def update_admin(request):
+    if request.method == 'POST':
+        return JsonResponse(utils.update_admin(request), safe=False)
 
 
-def update_admin(request, cmd, email):
-    return JsonResponse(utils.update_admin(request, cmd, email), safe=False)
-
-
+@staff_member_required
 def get_current_balance(request):
     return JsonResponse({
         'default_score': default_score, 
@@ -69,20 +75,24 @@ def update_wallet(request):
         return JsonResponse(utils.update_wallet(request), safe=False)
 
 
+@staff_member_required
 @csrf_exempt  # need to think about security
 def transfer_stat(request):
     return JsonResponse(utils.transfer_stat(request), safe=False)
 
 
+@staff_member_required
 @csrf_exempt  # need to think about security
 def user_stat(request):
     return JsonResponse(utils.user_stat(request))
 
 
+@staff_member_required
 def set_limit(request, amount_limit, block_limit):
     return JsonResponse(utils.set_limit(request, amount_limit, block_limit))
 
 
+@staff_member_required
 def get_limit(request):
     limit = utils.get_limit()
     limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
@@ -122,7 +132,7 @@ def req_icx(request):
 
     # send a email to admin when score doesn't have enough icx
     if (response['block_balance'] < score_min_limit):
-        email(str(score_min_limit))
+        utils.email(str(score_min_limit))
         return JsonResponse({
             'status': 'fail',
             'reason': 'Not enough icx in score',
