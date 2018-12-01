@@ -29,7 +29,7 @@ recipient = settings.RECIPIENT_LIST
 
 
 def index(request):
-    page = f'<div> Hello Admins: </div>{str(recipient)}'
+    page = f'<div> Hello Admins! <br><br></div>{str(recipient)}'
     return HttpResponse(page)
 
 
@@ -46,10 +46,9 @@ def update_admin(request, cmd, email):
 
 
 def get_current_balance(request):
-    result = utils.get_block_balance()
     return JsonResponse({
         'default_score': default_score, 
-        'current_balance': result
+        'current_balance': utils.get_block_balance()
     })
 
 
@@ -94,8 +93,8 @@ def req_icx(request):
 
     response = {}
 
-    wallet_icx_maxlimit = 100 * 10 ** 18
-    block_icx_warning_minlimit = 10 * 10 ** 18
+    wallet_max_limit = 100 * 10 ** 18
+    score_min_limit = 10 * 10 ** 18
     value = 0.1
 
     # Update game score
@@ -119,18 +118,22 @@ def req_icx(request):
     else:
         response['transaction_result'] = 'success'
 
-    print(response['tx_result'])
-
-    # send a email to admin when block doesn't have enough icx
-    if (response['block_balance'] < block_icx_warning_minlimit):
-        # call send_email function
-        email(str(block_icx_warning_minlimit))
-        return HttpResponse(f'Not enough icx in block - \
-            block_icx_warning_minlimit : {block_limit}')
+    # send a email to admin when score doesn't have enough icx
+    if (response['block_balance'] < score_min_limit):
+        email(str(score_min_limit))
+        return JsonResponse({
+            'status': 'fail',
+            'reason': 'Not enough icx in score',
+            'error_log': f'Score has less than {score_min_limit}'
+            })
 
     # transfer icx only when wallet's balance is under the limit
-    if (response['wallet_balance'] > wallet_icx_maxlimit):
-        return HttpResponse('You have too much icx in your wallet!!')
+    if (response['wallet_balance'] > wallet_max_limit):
+        return JsonResponse({
+            'status': 'fail',
+            'reason': 'Too much icx in wallet',
+            'error_log': f'Wallet has more than {wallet_max_limit}'
+        })
 
     # Check result
     response['block_address'] = default_score
@@ -152,12 +155,17 @@ def req_icx(request):
             default_score, to_address, value*0.1, 0.0001,
             response['game_score'])
 
-    result_page = {
+    result = {
         'wallet_address': str(response['wallet_address']),
         'wallet_balance': str(response['wallet_balance']),
         'latest_transaction': str(response['wallet_latest_transaction']),
         'transaction_result': response['transaction_result'],
-        'game_score': response['game_score']
+        'game_score': response['game_score'],
     }
 
-    return JsonResponse(result_page)
+    if result['transaction_result'] == 'failed':
+        err = response['tx_result']['failure']['message']
+        err = err[23:]
+        result['error_log'] = err
+
+    return JsonResponse(result)

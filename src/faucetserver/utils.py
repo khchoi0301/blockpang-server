@@ -332,6 +332,7 @@ def get_transaction_result(tx_hash):
         time.sleep(6)
         print('6s')
         tx_result = icon_service.get_transaction_result(tx_hash)
+
     except:
         time.sleep(6)
         print('12s')
