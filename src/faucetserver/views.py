@@ -163,7 +163,7 @@ def req_icx(request):
         'game_score': response['game_score'],
     }
 
-    if result['transaction_result'] == 'failed':
+    if result['transaction_result'] == 'fail':
         err = response['tx_result']['failure']['message']
         err = err[23:]
         result['error_log'] = err
