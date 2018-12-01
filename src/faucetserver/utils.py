@@ -7,6 +7,7 @@ import ast
 import os
 import urllib.request
 import time
+import datetime
 
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
@@ -87,59 +88,50 @@ def get_highest_gscores(request):
 
 def transfer_stat(request):
     print('create transfer statistics', request)
-    # req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
 
-    # if req_body['date']:
-    #     date = req_body['date']
-    # else:
-    #     date = 'current_date'
-
-    # if req_body['user']:
-    #     user = req_body['user']
-    # else:
-    #     user = '*'
-
-    # print(date, user)
+    if req_body['user'] != '*':
+        isAll = True
+    else:
+        isAll = False
 
     stat_result = {}
 
     query = [
-        """SELECT SUM(amount) FROM transaction WHERE 	
-            timestamp >=  current_date 
-			and timestamp < current_date + 1;""",
-        """SELECT SUM(amount) FROM transaction;""",
-        """SELECT count(amount) FROM transaction WHERE 	
-            timestamp >=  current_date 
-			and timestamp < current_date + 1;""",
-        """SELECT count(amount) FROM transaction;""",
-        """SELECT count(transaction.amount) FROM transaction,users
-            WHERE transaction.wallet = users.wallet;"""
+        '''
+        SELECT SUM(transaction.amount),count(transaction.amount) 
+        FROM transaction,users
+        WHERE transaction.wallet = users.wallet
+        AND (users.email in (%s)) = (%s) ;
+        ''',
+        ''' 
+        SELECT date_trunc('day', transaction.timestamp),SUM(transaction.amount), count(transaction.amount) 
+        FROM transaction,users
+        WHERE transaction.wallet = users.wallet   
+        ADN (users.email in (%s)) = (%s) 
+        GROUP BY date_trunc('day', transaction.timestamp);  
+        '''
     ]
 
-    cursor.execute(query[0])
-    stat_result['daily_transfer_amount'] = cursor.fetchall()[0][0]
+    stat_result['user'] = req_body['user']
 
-    cursor.execute(query[1])
-    stat_result['total_transfer_amount'] = cursor.fetchall()[0][0]
+    cursor.execute(query[0], (req_body['user'], isAll,))
+    total = cursor.fetchall()[0]
+    stat_result['total_transfer_amount'] = total[0]
+    stat_result['total_transfer'] = total[1]
 
-    cursor.execute(query[2])
-    stat_result['daily_transfer'] = cursor.fetchall()[0][0]
-
-    cursor.execute(query[3])
-    stat_result['total_transfer'] = cursor.fetchall()[0][0]
-
-    cursor.execute(query[4])
-    stat_result['test'] = cursor.fetchall()
-
-    return HttpResponse(str(stat_result))
+    cursor.execute(query[1], (req_body['user'], isAll,))
+    total1 = cursor.fetchall()
+    stat_result['daily'] = total1
+    return (str(stat_result))
 
 
 def user_stat(request):
     print('create users statistics', request)
     stat_result = {}
-    query = ["""    SELECT COUNT(wallet) FROM users     """,
-             """     SELECT date_trunc('day', timestamp), COUNT(*) as count FROM users
-    GROUP BY date_trunc('day', timestamp)    """]
+    query = ['''    SELECT COUNT(wallet) FROM users     ''',
+             '''     SELECT date_trunc('day', timestamp), COUNT(*) as count FROM users
+                GROUP BY date_trunc('day', timestamp)    ''']
 
     cursor.execute(query[0])
     stat_result['tatal_users'] = cursor.fetchall()[0][0]
@@ -200,7 +192,7 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
 
 
 def get_limit():
-    """ Get limits """
+    ''' Get limits '''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("get_limit")\
@@ -209,7 +201,7 @@ def get_limit():
 
 
 def set_limit(request, amount_limit, block_limit):
-    """Set a max amount and frequency of icx Score can send to user."""
+    '''Set a max amount and frequency of icx Score can send to user.'''
     limit_setting = {}
     limit_setting['amount_limit'] = amount_limit
     limit_setting['block_limit'] = block_limit
@@ -235,7 +227,7 @@ def set_limit(request, amount_limit, block_limit):
 
 
 def get_block_balance():
-    """Get a block's balance."""
+    '''Get a block's balance.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("get_balance")\
@@ -245,7 +237,7 @@ def get_block_balance():
 
 
 def get_wallet_balance(request, to_address):
-    """Get a wallet balance."""
+    '''Get a wallet balance.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("get_to")\
@@ -255,7 +247,7 @@ def get_wallet_balance(request, to_address):
 
 
 def send_transaction(request, to_address, value):
-    """Send icx to a wallet."""
+    '''Send icx to a wallet.'''
     print('transaction called')
 
     transaction = CallTransactionBuilder()\
@@ -277,7 +269,7 @@ def send_transaction(request, to_address, value):
 
 
 def get_latest_transaction(request, to_address):
-    """Get a wallet's latest transaction."""
+    '''Get a wallet's latest transaction.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("find_transaction")\
@@ -287,7 +279,7 @@ def get_latest_transaction(request, to_address):
 
 
 def get_latest_block_height():
-    """Get the latest block's height."""
+    '''Get the latest block's height.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method("block_height")\
@@ -296,7 +288,7 @@ def get_latest_block_height():
 
 
 def get_latest_block():
-    """Get the latest block."""
+    '''Get the latest block.'''
     return icon_service.get_block('latest')
 
 

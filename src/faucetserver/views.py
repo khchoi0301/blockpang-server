@@ -70,10 +70,12 @@ def update_wallet(request):
         return HttpResponse(utils.update_wallet(request))
 
 
+@csrf_exempt  # need to think about security
 def transfer_stat(request):
     return HttpResponse(utils.transfer_stat(request))
 
 
+@csrf_exempt  # need to think about security
 def user_stat(request):
     return HttpResponse(utils.user_stat(request))
 
