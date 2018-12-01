@@ -47,7 +47,7 @@ def update_admin(request, cmd, email):
 
 def get_current_balance(request):
     return JsonResponse({
-        'default_score': default_score, 
+        'default_score': default_score,
         'current_balance': utils.get_block_balance()
     })
 
@@ -84,10 +84,7 @@ def set_limit(request, amount_limit, block_limit):
 
 
 def get_limit(request):
-    limit = utils.get_limit()
-    limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
-    limit['blocklimit'] = int(limit['blocklimit'], 16)
-    return JsonResponse(limit)
+    return JsonResponse(utils.get_limit())
 
 
 @csrf_exempt  # need to think about security
@@ -97,7 +94,7 @@ def req_icx(request):
 
     wallet_max_limit = 100 * 10 ** 18
     score_min_limit = 10 * 10 ** 18
-    value = 0.1
+    value = 1
 
     # Update game score
     if request.method == 'POST':
@@ -106,9 +103,8 @@ def req_icx(request):
         to_address = req_body['wallet']
         value = int(response['game_score'])
 
-    response['block_balance'] = int(utils.get_block_balance(), 16)
-    response['wallet_balance'] = int(
-        utils.get_wallet_balance(request, to_address), 16)
+    response['block_balance'] = utils.get_block_balance()
+    response['wallet_balance'] = utils.get_wallet_balance(request, to_address)
 
     # transfer icx
     response['tx_hash'] = utils.send_transaction(request, to_address, value)
@@ -127,7 +123,7 @@ def req_icx(request):
             'status': 'fail',
             'reason': 'Not enough icx in score',
             'error_log': f'Score has less than {score_min_limit}'
-            })
+        })
 
     # transfer icx only when wallet's balance is under the limit
     if (response['wallet_balance'] > wallet_max_limit):
@@ -140,13 +136,12 @@ def req_icx(request):
     # Check result
     response['block_address'] = default_score
     response['wallet_address'] = to_address
-    response['wallet_latest_transaction'] = int(utils.get_latest_transaction(
-        request, to_address), 16)
-    response['latest_block_height'] = int(utils.get_latest_block_height(), 16)
+    response['wallet_latest_transaction'] = utils.get_latest_transaction(
+        request, to_address)
+    response['latest_block_height'] = utils.get_latest_block_height()
     response['latest_block_info'] = utils.get_latest_block()
-    response['block_balance'] = int(utils.get_block_balance(), 16)
-    response['wallet_balance'] = int(
-        utils.get_wallet_balance(request, to_address), 16)
+    response['block_balance'] = utils.get_block_balance()
+    response['wallet_balance'] = utils.get_wallet_balance(request, to_address)
 
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])

@@ -2,6 +2,7 @@ from iconservice import *
 
 TAG = 'FaucetScore'
 
+
 class FaucetScore(IconScoreBase):
 
     _DISPENSE_TRACK = "DISPENSE TRACK"
@@ -19,18 +20,13 @@ class FaucetScore(IconScoreBase):
         self._amountlimit = VarDB(self._AMOUNT_LIMIT, db, value_type=int)
         self._blocklimit = VarDB(self._BLOCK_LIMIT, db, value_type=int)
         self._amountlimit = 100 * 10 ** 18
-        self._blocklimit = 30
+        self._blocklimit = 1
 
     def on_install(self) -> None:
         super().on_install()
 
     def on_update(self) -> None:
         super().on_update()
-
-    @external(readonly=True)
-    def hello(self) -> str:
-        Logger.debug(f'Hello, world!', TAG)
-        return "Hello"
 
     @external(readonly=True)
     def get_balance(self) -> str:
@@ -45,10 +41,6 @@ class FaucetScore(IconScoreBase):
         return self._dispenseTracking[_to]
 
     @external(readonly=True)
-    def get_address(self) -> str:
-        return self.address
-
-    @external(readonly=True)
     def get_to(self, _to: Address, _from: Address) -> str:
         return self.icx.get_balance(_to)
 
@@ -61,6 +53,16 @@ class FaucetScore(IconScoreBase):
         return 'limit changed'
 
     @external
+    def get_limit(self) -> str:
+        limit = {}
+        limit['amountlimit'] = self._amountlimit
+        limit['blocklimit'] = self._blocklimit
+
+        Logger.info(
+            f'this get amountlimit : {self._amountlimit}  blocklimit : {self._blocklimit}', TAG)
+        return limit
+
+    @external
     def send_icx(self, _to: Address, value: int):
 
         # check if the address already asked for in last 30 blocks
@@ -70,10 +72,10 @@ class FaucetScore(IconScoreBase):
             revert(
                 f'Please wait for {self._blocklimit} blocks to be created before requesting again', TAG)
 
-        amount = 5 * 10 ** 17 * value
+        amount = value * 10 ** 17
 
         # check if score has enough balance
-        if(self.icx.get_balance(self.address) < amount * 100):
+        if(self.icx.get_balance(self.address) < amount):
             Logger.info(f'Not enough blance in faucet', TAG)
             revert('faucet doesn\'t have balance to dispense')
 
