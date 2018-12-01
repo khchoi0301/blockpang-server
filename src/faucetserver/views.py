@@ -75,7 +75,6 @@ def update_wallet(request):
         return JsonResponse(utils.update_wallet(request), safe=False)
 
 
-@staff_member_required
 @csrf_exempt  # need to think about security
 def transfer_stat(request):
     return JsonResponse(utils.transfer_stat(request), safe=False)
@@ -87,7 +86,6 @@ def user_stat(request):
     return JsonResponse(utils.user_stat(request))
 
 
-@staff_member_required
 def set_limit(request, amount_limit, block_limit):
     return JsonResponse(utils.set_limit(request, amount_limit, block_limit))
 
