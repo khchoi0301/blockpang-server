@@ -25,7 +25,7 @@ SECRET_KEY = '-k6p2ni_^c^n&gfk9sva07z!ov8dva=lh9w$^vj=148gvz&vaf'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 DEFAULT_SCORE_ADDRESS = 'cxffcc56806535faba51f3429cd12c21e9e28e1ec4'

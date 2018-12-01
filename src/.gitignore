@@ -7,4 +7,5 @@ tbears.log
 blockpang/__pycache__
 faucetscore/__pycache__
 faucetserver/__pycache__
+faucetserver/migrations
 *.pyc

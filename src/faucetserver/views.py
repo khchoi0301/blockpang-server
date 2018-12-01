@@ -54,6 +54,10 @@ def get_current_balance(request):
         <div style="font-weight:bold;">{result}</div>')
 
 
+def get_highest_gscores(request):
+    return HttpResponse(utils.get_highest_gscores(request))
+
+
 @csrf_exempt  # need to think about security
 def create_wallet(request):
     if request.method == 'POST':

@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='index'),
     path('transfer', views.req_icx, name='req_icx'),
+    path('leaderboard', views.get_highest_gscores, name='leaderboard'),
     path('wallet/create', views.create_wallet, name='create_wallet'),
     path('wallet/update', views.update_wallet, name='update_wallet'),
     path('admin/get_limit', views.get_limit, name='get_limit'),
