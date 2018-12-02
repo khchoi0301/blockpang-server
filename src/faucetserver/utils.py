@@ -1,5 +1,9 @@
 from django.db import connections
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.mail import send_mail
+from django.db import IntegrityError
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -21,7 +25,6 @@ from iconsdk.builder.transaction_builder import (
 )
 
 cursor = connections['default'].cursor()
-recipient = settings.RECIPIENT_LIST
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 
@@ -51,31 +54,61 @@ def db_query(request, table):
     return data
 
 
+def get_admins():
+    staff_list = []
+    staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
+    for staff in staffs:
+        staff_list.append(staff)
+    print(f'List of staffs: {staff_list}')
+    return staff_list
+
+
 def email(minlimit):
+    recipient = get_admins()
     subject = 'Icon Faucet: Not enough icx'
     message = f'Score has less than {minlimit} icx. Please add icx to score.'
     email_from = settings.EMAIL_HOST_USER
     send_mail(subject, message, email_from, recipient)
     print('===SUCCESS: email has been sent.===')
+    print(recipient)
     return 'Email has been sent to admins.'
 
 
-def update_admin(request, cmd, email):
-    if cmd == 'add':
-        if (email not in recipient):
-            recipient.append(email)
-            print(f'===SUCCESS: {email} has been added to admin list.===')
-        else:
-            print(f'===ERROR: {email} is already in admin list.===')
+def update_admin(request):
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    username = req_body['username']
 
-    elif cmd == 'delete':
+    if req_body['cmd'] == 'add':
+        new_email = req_body['email']
         try:
-            recipient.remove(email)
-            print(f'===SUCCESS: {email} has been deleted from admin list.===')
-        except ValueError:
-            print(f'===ERROR: {email} is not in admin list.===')
+            print('not in staff list', req_body)
+            new_staff = User.objects.create_user(
+                username=req_body['username'],
+                password=req_body['password'],
+                email=new_email
+                )
+            new_staff.is_superuser=True
+            new_staff.is_staff=True
+            new_staff.save()
+            print(f'===SUCCESS: {new_email} has been added.===')
+            log = f'SUCCESS: {new_email} has been added to admin list.'
+        
+        except IntegrityError:
+            print(f'===ERROR: {new_email} is already in admin list.===')
+            log = f'ERROR: {new_email} is already in admin list.'
 
-    return recipient
+    elif req_body['cmd'] == 'delete':
+        try:
+            User.objects.get(
+                username=req_body['username'], is_superuser=True).delete()
+            print(f'===SUCCESS: {username} has been deleted.===')
+            log = f'SUCCESS: {username} has been deleted from admin list.'
+        
+        except ObjectDoesNotExist:
+            print(f'===ERROR: {username} is not in admin list.===')
+            log = f'ERROR: {username} is not in admin list.'
+
+    return {'staff_list': get_admins(), 'logger': log}
 
 
 def get_highest_gscores(request):

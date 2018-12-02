@@ -15,7 +15,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
@@ -27,11 +26,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
 DEFAULT_SCORE_ADDRESS = 'cxffcc56806535faba51f3429cd12c21e9e28e1ec4'
 ICON_SERVICE_PROVIDER = "https://bicon.net.solidwallet.io/api/v3"
 # ICON_SERVICE_PROVIDER = "http://127.0.0.1:9000/api/v3"
-RECIPIENT_LIST = ['charredbroccoli@gmail.com', 'khchoi0301@gmail.com']
 
 
 INSTALLED_APPS = [
@@ -76,7 +73,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'blockpang.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
@@ -97,7 +93,6 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'charredbroccoli@gmail.com'
 EMAIL_HOST_PASSWORD = 'tamago111'
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
