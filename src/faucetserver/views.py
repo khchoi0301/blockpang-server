@@ -39,7 +39,6 @@ def index(request):
     return JsonResponse({'admin_email': staff_list})
 
 
-@staff_member_required
 def db_query(request, table):
     return JsonResponse(utils.db_query(request, table), safe=False)
 
@@ -50,7 +49,6 @@ def update_admin(request):
         return JsonResponse(utils.update_admin(request), safe=False)
 
 
-@staff_member_required
 def get_current_balance(request):
     return JsonResponse({
         'default_score': default_score,
@@ -80,7 +78,6 @@ def transfer_stat(request):
     return JsonResponse(utils.transfer_stat(request), safe=False)
 
 
-@staff_member_required
 @csrf_exempt  # need to think about security
 def user_stat(request):
     return JsonResponse(utils.user_stat(request))
@@ -90,7 +87,6 @@ def set_limit(request, amount_limit, block_limit):
     return JsonResponse(utils.set_limit(request, amount_limit, block_limit))
 
 
-@staff_member_required
 def get_limit(request):
     return JsonResponse(utils.get_limit())
 
