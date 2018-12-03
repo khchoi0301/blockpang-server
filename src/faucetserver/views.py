@@ -44,6 +44,7 @@ def db_query(request, table):
     return JsonResponse(utils.db_query(request, table), safe=False)
 
 
+@staff_member_required
 @csrf_exempt
 def update_admin(request):
     if request.method == 'POST':
