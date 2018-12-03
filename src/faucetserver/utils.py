@@ -220,12 +220,15 @@ def insertDB_users(request, wallet):
         req_body['wallet'] = wallet
 
     query = '''
-        INSERT INTO users (service_provider, wallet, email, user_pid) 
-        VALUES (%s,%s,%s,%s)
+        INSERT INTO users 
+        (service_provider, wallet, email, user_pid, profile_img_url, nickname) 
+        VALUES (%s,%s,%s,%s,%s,%s)
         '''
 
-    cursor.execute(query, (req_body['service_provider'],
-                           req_body['wallet'], req_body['email'], req_body['user_pid']))
+    cursor.execute(query, (
+        req_body['service_provider'], req_body['wallet'], req_body['email'],
+        req_body['user_pid'], req_body['profile_img_url'],
+        req_body['nickname']))
     connections['default'].commit()
 
     return '===SUCCESS: USERS DB updated==='
