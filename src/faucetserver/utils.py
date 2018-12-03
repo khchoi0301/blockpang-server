@@ -152,8 +152,8 @@ def transfer_stat(request):
 
 
     cursor.execute(query[2], (req_body['user'], isAll,))
-    total = cursor.fetchall()
-    stat_result['by_user'] = total
+    transaction_list = cursor.fetchall()
+    stat_result['transaction_list'] = transaction_list
 
     return (str(stat_result))
 
