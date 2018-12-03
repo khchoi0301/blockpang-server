@@ -80,7 +80,7 @@ def transfer_stat(request):
 
 @csrf_exempt  # need to think about security
 def user_stat(request):
-    return JsonResponse(utils.user_stat(request))
+    return JsonResponse(utils.user_stat(request), safe=False)
 
 
 def set_limit(request, amount_limit, block_limit):
