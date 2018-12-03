@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('token', views.get_token),
     path('transfer', views.req_icx, name='req_icx'),
     path('leaderboard', views.get_highest_gscores, name='leaderboard'),
     path('wallet/create', views.create_wallet, name='create_wallet'),
