@@ -19,14 +19,25 @@ class FaucetScore(IconScoreBase):
             self._DISPENSE_TRACK, db, value_type=int)
         self._amountlimit = VarDB(self._AMOUNT_LIMIT, db, value_type=int)
         self._blocklimit = VarDB(self._BLOCK_LIMIT, db, value_type=int)
-        self._amountlimit = 100 * 10 ** 18
-        self._blocklimit = 1
+        # self._amountlimit = 100 * 10 ** 18
+        # self._blocklimit = 1
+        Logger.info(f'on_init1', TAG)
 
-    def on_install(self) -> None:
+    def on_install(self, amount: int, block: int) -> None:
         super().on_install()
+        amountlimit = amount * 10 ** 18
+        self._amountlimit.set(amountlimit)
+        self._blocklimit.set(block)
+        Logger.info(
+            f'on_install1 {self._amountlimit.get()} {self._blocklimit.get()}', TAG)
 
-    def on_update(self) -> None:
+    def on_update(self, amount: int, block: int) -> None:
         super().on_update()
+        amountlimit = amount * 10 ** 18
+        self._amountlimit.set(amountlimit)
+        self._blocklimit.set(block)
+        Logger.info(
+            f'on_update {self._amountlimit.get()} {self._blocklimit.get()}', TAG)
 
     @external(readonly=True)
     def get_balance(self) -> str:
@@ -46,20 +57,24 @@ class FaucetScore(IconScoreBase):
 
     @external
     def set_limit(self, amountlimit: int, blocklimit: int):
-        self._amountlimit = amountlimit * 10 ** 18
-        self._blocklimit = blocklimit
+
+        Logger.info(f'this sets amountlimit1', TAG)
+        self._amountlimit.set(amountlimit * 10 ** 18)
+        self._blocklimit.set(blocklimit)
         Logger.info(
-            f'this sets amountlimit : {self._amountlimit} ( {amountlimit} icx ) blocklimit : {self._blocklimit}', TAG)
+            f'this sets amountlimit2 : {self._amountlimit.get()} ( {self._amountlimit.get()} icx ) blocklimit : {self._blocklimit.get()}', TAG)
         return 'limit changed'
 
     @external
     def get_limit(self) -> str:
+        Logger.info(
+            f'thisgetamountlimit1 : {self._amountlimit.get()}  blocklimit : {self._blocklimit.get()}', TAG)
         limit = {}
-        limit['amountlimit'] = self._amountlimit
-        limit['blocklimit'] = self._blocklimit
+        limit['amountlimit'] = self._amountlimit.get()
+        limit['blocklimit'] = self._blocklimit.get()
 
         Logger.info(
-            f'this get amountlimit : {self._amountlimit}  blocklimit : {self._blocklimit}', TAG)
+            f'thisgetamountlimit2 : {self._amountlimit.get()}  blocklimit : {self._blocklimit.get()}', TAG)
         return limit
 
     @external

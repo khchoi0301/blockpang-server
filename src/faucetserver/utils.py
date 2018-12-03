@@ -188,7 +188,7 @@ def transfer_stat(request):
     transaction_list = cursor.fetchall()
     stat_result['transaction_list'] = transaction_list
 
-    return (str(stat_result))
+    return stat_result
 
 
 def user_stat(request):
@@ -297,7 +297,7 @@ def set_limit(request, amount_limit, block_limit):
         .nid(3)\
         .nonce(100)\
         .method('set_limit')\
-        .params({'amount_limit': amount_limit, 'block_limit': block_limit})\
+        .params({'amountlimit': amount_limit, 'blocklimit': block_limit})\
         .build()
 
     # Returns the signed transaction object having a signature
