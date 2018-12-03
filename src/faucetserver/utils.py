@@ -214,7 +214,6 @@ def user_stat(request):
 
 
 def create_wallet(request):
-    print('Create a wallet', request)
     new_wallet = {}
 
     wallet = KeyWallet.create()
@@ -226,13 +225,14 @@ def create_wallet(request):
 
 
 def update_wallet(request):
-    print('Update a wallet to database', request)
-    return insertDB_users(request, 'request should includes wallet address')
-    
+    try:
+        return insertDB_users(request, 'include wallet address')
+    except Exception as e:
+        return {'status': 'fail', 'error_log': str(e)}
 
 
 def insertDB_users(request, wallet):
-    print('insertDB_users', request, wallet)
+    print('insertDB_users func called', request, wallet)
     req_body = ast.literal_eval(request.body.decode('utf-8'))
 
     try:
@@ -251,8 +251,7 @@ def insertDB_users(request, wallet):
         req_body['user_pid'], req_body['profile_img_url'],
         req_body['nickname']))
     connections['default'].commit()
-    return '===SUCCESS: USERS DB updated==='
-
+    return '===SUCCESS: users DB has been updated==='
 
 
 def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
@@ -268,7 +267,7 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
                            wallet, amount, txfee, gscore))
 
     connections['default'].commit()
-    return '===SUCCESS: Transaction DB has been updated.==='
+    return '===SUCCESS: transaction DB has been updated==='
 
 
 def get_limit():
