@@ -33,7 +33,14 @@ wallet_from = wallet.get_address()
 def db_query(request, table):
     query = [
         'SELECT * FROM transaction;',
-        'SELECT * from users;']
+        'SELECT * from users;',
+        '''
+        SELECT * FROM users, transaction
+        WHERE transaction.wallet = users.wallet
+        ORDER BY transaction.timestamp DESC
+        limit 50;
+        '''
+        ]
 
     data = []
 
@@ -43,6 +50,9 @@ def db_query(request, table):
     elif (table == 'users'):
         print('===querying usersDB===')
         cursor.execute(query[1])
+    elif (table == 'latest'):
+        print('===querying latestDB===')
+        cursor.execute(query[2])
 
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
@@ -121,6 +131,11 @@ def transfer_stat(request):
         WHERE transaction.wallet = users.wallet   
         AND (users.email in (%s)) = (%s) 
         GROUP BY date_trunc('day', transaction.timestamp);  
+        ''',
+        ''' 
+        SELECT * FROM users,transaction
+        WHERE transaction.wallet = users.wallet   
+        AND (users.email in (%s)) = (%s) 
         '''
     ]
 
@@ -134,6 +149,12 @@ def transfer_stat(request):
     cursor.execute(query[1], (req_body['user'], isAll,))
     total = cursor.fetchall()
     stat_result['daily'] = total
+
+
+    cursor.execute(query[2], (req_body['user'], isAll,))
+    total = cursor.fetchall()
+    stat_result['by_user'] = total
+
     return (str(stat_result))
 
 
@@ -173,8 +194,8 @@ def create_wallet(request):
 
 def update_wallet(request):
     print('Update a wallet to database', request)
-    insertDB_users(request, 'request should includes wallet address')
-    return '===SUCCESS: Wallet has been updated.==='
+    return insertDB_users(request, 'request should includes wallet address')
+    
 
 
 def insertDB_users(request, wallet):
@@ -194,8 +215,8 @@ def insertDB_users(request, wallet):
     cursor.execute(query, (req_body['service_provider'],
                            req_body['wallet'], req_body['email'], req_body['user_pid']))
     connections['default'].commit()
-
     return '===SUCCESS: USERS DB updated==='
+
 
 
 def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
