@@ -142,7 +142,7 @@ def req_icx(request):
         utils.insertDB_transaction(
             response['tx_result']['txHash'],
             response['tx_result']['blockHeight'],
-            default_score, to_address, value*0.1, 0.0001,
+            default_score, to_address, value*0.01, 0.0001,
             response['game_score'])
 
     result = {
