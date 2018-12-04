@@ -49,7 +49,7 @@ def db_query(request, table):
         AND transaction.timestamp > current_date
         ORDER BY transaction.timestamp DESC
         '''
-        ]
+    ]
 
     data = []
 
@@ -105,13 +105,13 @@ def update_admin(request):
                 username=req_body['username'],
                 password=req_body['password'],
                 email=new_email
-                )
-            new_staff.is_superuser=True
-            new_staff.is_staff=True
+            )
+            new_staff.is_superuser = True
+            new_staff.is_staff = True
             new_staff.save()
             print(f'===SUCCESS: {new_email} has been added.===')
             log = f'SUCCESS: {new_email} has been added to admin list.'
-        
+
         except IntegrityError:
             print(f'===ERROR: {new_email} is already in admin list.===')
             log = f'ERROR: {new_email} is already in admin list.'
@@ -122,7 +122,7 @@ def update_admin(request):
                 username=req_body['username'], is_superuser=True).delete()
             print(f'===SUCCESS: {username} has been deleted.===')
             log = f'SUCCESS: {username} has been deleted from admin list.'
-        
+
         except ObjectDoesNotExist:
             print(f'===ERROR: {username} is not in admin list.===')
             log = f'ERROR: {username} is not in admin list.'
@@ -193,8 +193,6 @@ def transfer_stat(request):
     total = cursor.fetchall()
     stat_result['daily'] = total
 
-
-    
     stat_result['transaction_list'] = []
     cursor.execute(query[2], (req_body['user'], isAll,))
     row_headers = [x[0] for x in cursor.description]
@@ -229,16 +227,14 @@ def user_stat(request):
     cursor.execute(query[0])
     stat_result['total_users'] = cursor.fetchall()[0][0]
 
-
     stat_result['total_users_by_pid'] = []
     cursor.execute(query[1])
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     for result in query_result:
-        stat_result['total_users_by_pid'].append(dict(zip(row_headers, result)))
+        stat_result['total_users_by_pid'].append(
+            dict(zip(row_headers, result)))
 
-
-    
     stat_result['daily_users'] = []
     cursor.execute(query[2])
     row_headers = [x[0] for x in cursor.description]
