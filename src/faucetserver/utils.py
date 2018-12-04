@@ -25,6 +25,9 @@ from iconsdk.builder.transaction_builder import (
     MessageTransactionBuilder
 )
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
@@ -66,14 +69,35 @@ def db_query(request, table):
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     data = []
+
     for result in query_result:
         data.append(dict(zip(row_headers, result)))
-    
+
     if (table == 'summary'):
         data = data[0]
         data['score_address'] = default_score
         data['current_balance'] = get_block_balance()
-        
+
+    # pagination of transaction DB
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+
+    if (table == 'transaction' and 'page' in req_body):
+        page = req_body['page']
+        page_size = req_body['pageSize']
+        paginator = Paginator(data, page_size)  # Show 20 contacts per page
+
+        try:
+            contacts = paginator.page(page)
+            print('contacts', contacts, contacts.object_list)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            contacts = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            contacts = paginator.page(paginator.num_pages)
+
+        return str({'pages': contacts, 'data': contacts.object_list})
+
     return data
 
 
@@ -109,13 +133,13 @@ def update_admin(request):
                 username=req_body['username'],
                 password=req_body['password'],
                 email=new_email
-                )
-            new_staff.is_superuser=True
-            new_staff.is_staff=True
+            )
+            new_staff.is_superuser = True
+            new_staff.is_staff = True
             new_staff.save()
             print(f'===SUCCESS: {new_email} has been added.===')
             log = f'SUCCESS: {new_email} has been added to admin list.'
-        
+
         except IntegrityError:
             print(f'===ERROR: {new_email} is already in admin list.===')
             log = f'ERROR: {new_email} is already in admin list.'
@@ -126,7 +150,7 @@ def update_admin(request):
                 username=req_body['username'], is_superuser=True).delete()
             print(f'===SUCCESS: {username} has been deleted.===')
             log = f'SUCCESS: {username} has been deleted from admin list.'
-        
+
         except ObjectDoesNotExist:
             print(f'===ERROR: {username} is not in admin list.===')
             log = f'ERROR: {username} is not in admin list.'
