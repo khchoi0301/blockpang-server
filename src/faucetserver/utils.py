@@ -1,5 +1,6 @@
 from django.db import connections
 from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
@@ -11,7 +12,17 @@ import ast
 import datetime
 import os
 import urllib.request
+import requests
 import time
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_200_OK
+)
+from rest_framework.response import Response
 from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.icon_service import IconService
@@ -45,8 +56,6 @@ def db_query(request, table):
         '''
         ]
 
-    data = []
-
     if (table == 'transaction'):
         print('===querying transactionDB===')
         cursor.execute(query[0])
@@ -59,6 +68,7 @@ def db_query(request, table):
 
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
+    data = []
     for result in query_result:
         data.append(dict(zip(row_headers, result)))
     return data
@@ -79,8 +89,7 @@ def email(minlimit):
     message = f'Score has less than {minlimit} icx. Please add icx to score.'
     email_from = settings.EMAIL_HOST_USER
     send_mail(subject, message, email_from, recipient)
-    print('===SUCCESS: email has been sent.===')
-    print(recipient)
+    print(f'===SUCCESS: email has been sent to {recipient}.===')
     return 'Email has been sent to admins.'
 
 
@@ -121,6 +130,23 @@ def update_admin(request):
     return {'staff_list': get_admins(), 'logger': log}
 
 
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes((AllowAny,))
+def get_token(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    if username is None or password is None:
+        return Response({'error': 'Please provide both username and password'},
+                        status=HTTP_400_BAD_REQUEST)
+    user = authenticate(username=username, password=password)
+    if not user:
+        return Response({'error': 'Invalid Credentials'},
+                        status=HTTP_404_NOT_FOUND)
+    token, _ = Token.objects.get_or_create(user=user)
+    return Response({'token': token.key}, status=HTTP_200_OK)
+
+
 def get_highest_gscores(request):
     query = '''
         SELECT users.email, transaction.wallet, transaction.gscore 
@@ -131,10 +157,10 @@ def get_highest_gscores(request):
         limit 10;
     '''
 
-    data = []
     cursor.execute(query)
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
+    data = []
     for result in query_result:
         data.append(dict(zip(row_headers, result)))
     return data
