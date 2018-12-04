@@ -88,7 +88,7 @@ class FaucetScore(IconScoreBase):
     @external
     def send_icx(self, _to: Address, value: int):
 
-        amount = value * 10 ** 17
+        amount = value * 10 ** 16
 
         Logger.info(
             f'sendICXcalled {amount} to {_to} value {value} amountlimit : {self._amountlimit} blocklimit : {self._blocklimit}', TAG)
