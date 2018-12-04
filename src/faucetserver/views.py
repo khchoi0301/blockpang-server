@@ -66,19 +66,16 @@ def get_current_balance(request):
     })
 
 
-@api_view(['GET'])
 def get_highest_gscores(request):
     data = utils.get_highest_gscores(request)
     return JsonResponse(data, safe=False)
 
 
-@api_view(['POST'])
 @csrf_exempt
 def create_wallet(request):
     return JsonResponse(utils.create_wallet(request))
 
 
-@api_view(['POST'])
 @csrf_exempt
 def update_wallet(request):
     return JsonResponse(utils.update_wallet(request), safe=False)
@@ -105,12 +102,9 @@ def get_limit(request):
     return JsonResponse(utils.get_limit())
 
 
-@api_view(['POST'])
 @csrf_exempt
 def req_icx(request):
-
     response = {}
-
     wallet_max_limit = 100 * 10 ** 18
     score_min_limit = 10 * 10 ** 18
     value = 1
