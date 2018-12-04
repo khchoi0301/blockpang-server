@@ -25,10 +25,10 @@ from iconsdk.builder.transaction_builder import (
     MessageTransactionBuilder
 )
 
-cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 
+print('==========', os.path.dirname(__file__))
 keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore2')
 wallet = KeyWallet.load(keypath, "@icon222")
 wallet_from = wallet.get_address()
@@ -52,6 +52,8 @@ def db_query(request, table):
         from transaction;
         '''
     ]
+
+    cursor = connections['default'].cursor()
 
     if (table == 'transaction'):
         print('===querying transactionDB===')
@@ -145,6 +147,7 @@ def get_highest_gscores(request):
     '''
 
     data = []
+    cursor = connections['default'].cursor()
     cursor.execute(query)
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
@@ -186,11 +189,13 @@ def insertDB_users(request, wallet):
         VALUES (%s,%s,%s,%s,%s,%s)
         '''
 
+    cursor = connections['default'].cursor()
     cursor.execute(query, (
         req_body['service_provider'], req_body['wallet'], req_body['email'],
         req_body['user_pid'], req_body['profile_img_url'],
         req_body['nickname']))
     connections['default'].commit()
+
     return '===SUCCESS: users DB has been updated==='
 
 
@@ -203,6 +208,7 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
         VALUES (%s,%s,%s,%s,%s,%s,%s)
         '''
 
+    cursor = connections['default'].cursor()
     cursor.execute(query, (txhash, block, score,
                            wallet, amount, txfee, gscore))
 
@@ -371,6 +377,7 @@ def transfer_stat(request):
 
     stat_result['user'] = req_body['user']
 
+    cursor = connections['default'].cursor()
     cursor.execute(query[0], (req_body['user'], isAll,))
     total = cursor.fetchall()[0]
     stat_result['total_transfer_amount'] = total[0]
