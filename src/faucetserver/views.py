@@ -96,8 +96,8 @@ def req_icx(request):
 
     response = {}
 
-    wallet_max_limit = 100 * 10 ** 18
-    score_min_limit = 10 * 10 ** 18
+    wallet_max_limit = 100
+    score_min_limit = 10
     value = 1
 
     # Update game score
@@ -166,7 +166,6 @@ def req_icx(request):
 
     if result['transaction_result'] == 'fail':
         err = response['tx_result']['failure']['message']
-        err = err[23:]
         result['error_log'] = err
 
     return JsonResponse(result)
