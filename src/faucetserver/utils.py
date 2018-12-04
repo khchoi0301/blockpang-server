@@ -324,13 +324,13 @@ def get_transaction_result(tx_hash):
     return tx_result
 
 
-# def get_block_balance():
-#     '''Get a block's balance.'''
-#     call = CallBuilder().from_(wallet_from)\
-#         .to(default_score)\
-#         .method('get_balance')\
-#         .build()
-#     return int(icon_service.call(call), 16) / 10 ** 18
+def get_block_balance():
+    '''Get a block's balance.'''
+    call = CallBuilder().from_(wallet_from)\
+        .to(default_score)\
+        .method('get_balance')\
+        .build()
+    return int(icon_service.call(call), 16) / 10 ** 18
 
 
 def transfer_stat(request):
