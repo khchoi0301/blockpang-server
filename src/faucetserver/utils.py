@@ -251,15 +251,15 @@ def get_wallet_balance(request, to_address):
     '''Get a wallet balance.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
-        .method('get_to')\
-        .params({'_from': wallet_from, '_to': to_address})\
+        .method('get_wallet_balance')\
+        .params({'_to': to_address})\
         .build()
     return int(icon_service.call(call), 16) / 10 ** 18
 
 
 def send_transaction(request, to_address, value):
     '''Send icx to a wallet.'''
-    print('transaction called')
+    print('transaction called', to_address, 'value : ', value, type(value))
 
     transaction = CallTransactionBuilder()\
         .from_(wallet.get_address())\
@@ -268,7 +268,7 @@ def send_transaction(request, to_address, value):
         .nid(3)\
         .nonce(100)\
         .method('send_icx')\
-        .params({'_to': to_address, 'value': value})\
+        .params({'_to': to_address, 'value': int(value)})\
         .build()
 
     # Returns the signed transaction object having a signature
@@ -283,7 +283,7 @@ def get_latest_transaction(request, to_address):
     '''Get a wallet's latest transaction.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
-        .method('find_transaction')\
+        .method('find_latest_transaction')\
         .params({'_to': to_address})\
         .build()
     return int(icon_service.call(call), 16)

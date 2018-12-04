@@ -2,14 +2,14 @@
   "jsonrpc": "2.0",
   "method": "icx_sendTransaction",
   "params": {
-      "version": "0x3",
-      "from": "hxe7af5fcfd8dfc67530a01a0e403882687528dfcb",
-      "value": "0xde0b6b3a764000000",
-      "stepLimit": "0x200000",
-      "nid": "0x3",
-      "nonce": "0x1",
-      "to": "cx7a97fb51e196a8c4eac56cb6008d2033f980f1e8",
-      "dataType": "call"
+    "version": "0x3",
+    "from": "hxe7af5fcfd8dfc67530a01a0e403882687528dfcb",
+    "value": "0xde0b6b3a764000000",
+    "stepLimit": "0x200000",
+    "nid": "0x3",
+    "nonce": "0x1",
+    "to": "cx42b70f05c186818da48ce5e0067e92b685f7baed",
+    "dataType": "call"
   },
   "id": 1
 }

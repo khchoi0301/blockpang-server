@@ -98,16 +98,6 @@ def req_icx(request):
     response['block_balance'] = utils.get_block_balance()
     response['wallet_balance'] = utils.get_wallet_balance(request, to_address)
 
-    # transfer icx
-    response['tx_hash'] = utils.send_transaction(request, to_address, value)
-
-    # Add transaction_result key to result
-    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
-    if (int(response['tx_result']['status']) == 0):
-        response['transaction_result'] = 'fail'
-    else:
-        response['transaction_result'] = 'success'
-
     # send a email to admin when score doesn't have enough icx
     if (response['block_balance'] < score_min_limit):
         utils.email(str(score_min_limit))
@@ -124,6 +114,17 @@ def req_icx(request):
             'reason': 'Too much icx in wallet',
             'error_log': f'Wallet has more than {wallet_max_limit}'
         })
+
+    # transfer icx
+    response['tx_hash'] = utils.send_transaction(request, to_address, value)
+    print('tx_hash', response['tx_hash'])
+
+    # Add transaction_result key to result
+    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
+    if (int(response['tx_result']['status']) == 0):
+        response['transaction_result'] = 'fail'
+    else:
+        response['transaction_result'] = 'success'
 
     # Check result
     response['block_address'] = default_score
