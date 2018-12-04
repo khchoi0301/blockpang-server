@@ -1,4 +1,4 @@
-from django.shortcuts import render
+# from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
@@ -8,12 +8,12 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.db import connections
 import ast
-import datetime
-import json
+# import datetime
+# import json
 import os
 import urllib.request
-from iconsdk.wallet.wallet import KeyWallet
-from iconsdk.signed_transaction import SignedTransaction
+# from iconsdk.wallet.wallet import KeyWallet
+# from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.builder.call_builder import CallBuilder
