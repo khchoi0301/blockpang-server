@@ -260,6 +260,7 @@ def update_wallet(request):
 def insertDB_users(request, wallet):
     print('insertDB_users func called', request, wallet)
     req_body = ast.literal_eval(request.body.decode('utf-8'))
+    print(req_body)
 
     try:
         req_body['wallet'] = req_body['wallet']

@@ -3,7 +3,9 @@ from django.conf.urls import url
 from . import utils
 from . import views
 from rest_framework.documentation import include_docs_urls
+from rest_framework_swagger.views import get_swagger_view
 
+schema_view = get_swagger_view(title='List of APIs')
 
 urlpatterns = [
     path('', views.index, name='index'),
@@ -25,5 +27,7 @@ urlpatterns = [
     url(r'^docs/', include_docs_urls(title='List of APIs',
                                     authentication_classes=[],
                                     permission_classes=[],
-                                    ))
+                                    )),
+
+     url(r'^api', schema_view)
 ]
