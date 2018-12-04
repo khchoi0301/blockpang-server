@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import ast
 import datetime
+import json
 import os
 import urllib.request
 import time
@@ -38,22 +39,19 @@ def db_query(request, table):
         '''
         SELECT * FROM users, transaction
         WHERE transaction.wallet = users.wallet
-        ORDER BY transaction.timestamp DESC
-        ;''',
+        ORDER BY transaction.timestamp DESC;
+        ''',
         '''
         SELECT * from users
-        ORDER BY id DESC
-        ;''',
-        'SELECT * FROM transaction;',
+        ORDER BY id DESC;
+        ''',
         '''
-        SELECT * FROM users, transaction
-        WHERE transaction.wallet = users.wallet
-        AND transaction.timestamp > current_date
-        ORDER BY transaction.timestamp DESC
+        SELECT count(txhash) as total_transfer,
+        sum(amount) as total_transfer_amount,
+        count(DISTINCT wallet) as total_users
+        from transaction;
         '''
     ]
-
-    data = []
 
     if (table == 'transaction'):
         print('===querying transactionDB===')
@@ -61,17 +59,21 @@ def db_query(request, table):
     elif (table == 'users'):
         print('===querying usersDB===')
         cursor.execute(query[1])
-    elif (table == 'transaction_without_user'):
-        print('===querying transactionDB_without_user===')
+    elif (table == 'summary'):
+        print('===querying summary===')
         cursor.execute(query[2])
-    elif (table == 'today'):
-        print('===querying todaysDB===')
-        cursor.execute(query[3])
 
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
+    data = []
     for result in query_result:
         data.append(dict(zip(row_headers, result)))
+    
+    if (table == 'summary'):
+        data = data[0]
+        data['score_address'] = default_score
+        data['current_balance'] = get_block_balance()
+        
     return data
 
 
@@ -107,13 +109,13 @@ def update_admin(request):
                 username=req_body['username'],
                 password=req_body['password'],
                 email=new_email
-            )
-            new_staff.is_superuser = True
-            new_staff.is_staff = True
+                )
+            new_staff.is_superuser=True
+            new_staff.is_staff=True
             new_staff.save()
             print(f'===SUCCESS: {new_email} has been added.===')
             log = f'SUCCESS: {new_email} has been added to admin list.'
-
+        
         except IntegrityError:
             print(f'===ERROR: {new_email} is already in admin list.===')
             log = f'ERROR: {new_email} is already in admin list.'
@@ -124,7 +126,7 @@ def update_admin(request):
                 username=req_body['username'], is_superuser=True).delete()
             print(f'===SUCCESS: {username} has been deleted.===')
             log = f'SUCCESS: {username} has been deleted from admin list.'
-
+        
         except ObjectDoesNotExist:
             print(f'===ERROR: {username} is not in admin list.===')
             log = f'ERROR: {username} is not in admin list.'

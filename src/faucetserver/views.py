@@ -155,7 +155,6 @@ def req_icx(request):
 
     if result['transaction_result'] == 'fail':
         err = response['tx_result']['failure']['message']
-        err = err[23:]
         result['error_log'] = err
 
     return JsonResponse(result)
