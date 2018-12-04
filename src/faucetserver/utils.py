@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 import ast
 import datetime
+import json
 import os
 import urllib.request
 import time
@@ -43,13 +44,13 @@ def db_query(request, table):
         ORDER BY transaction.timestamp DESC
         limit 50;
         ''',
+        ''' 
+        SELECT count(txhash) as total_transfer,
+        sum(amount) as total_transfer_amount,
+        count(DISTINCT wallet) as total_users
+        from transaction;
         '''
-        SELECT * FROM users, transaction
-        WHERE transaction.wallet = users.wallet
-        AND transaction.timestamp > current_date
-        ORDER BY transaction.timestamp DESC
-        '''
-    ]
+        ]
 
     data = []
 
@@ -60,16 +61,22 @@ def db_query(request, table):
         print('===querying usersDB===')
         cursor.execute(query[1])
     elif (table == 'latest'):
-        print('===querying latestDB===')
+        print('===querying latest===')
         cursor.execute(query[2])
-    elif (table == 'today'):
-        print('===querying todaysDB===')
+    elif (table == 'summary'):
+        print('===querying summary===')
         cursor.execute(query[3])
 
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     for result in query_result:
         data.append(dict(zip(row_headers, result)))
+    
+    if (table == 'summary'):
+        data = data[0]
+        data['score_address'] = default_score
+        data['current_balance'] = get_block_balance()
+        
     return data
 
 
@@ -105,13 +112,13 @@ def update_admin(request):
                 username=req_body['username'],
                 password=req_body['password'],
                 email=new_email
-            )
-            new_staff.is_superuser = True
-            new_staff.is_staff = True
+                )
+            new_staff.is_superuser=True
+            new_staff.is_staff=True
             new_staff.save()
             print(f'===SUCCESS: {new_email} has been added.===')
             log = f'SUCCESS: {new_email} has been added to admin list.'
-
+        
         except IntegrityError:
             print(f'===ERROR: {new_email} is already in admin list.===')
             log = f'ERROR: {new_email} is already in admin list.'
@@ -122,7 +129,7 @@ def update_admin(request):
                 username=req_body['username'], is_superuser=True).delete()
             print(f'===SUCCESS: {username} has been deleted.===')
             log = f'SUCCESS: {username} has been deleted from admin list.'
-
+        
         except ObjectDoesNotExist:
             print(f'===ERROR: {username} is not in admin list.===')
             log = f'ERROR: {username} is not in admin list.'
@@ -178,7 +185,6 @@ def transfer_stat(request):
         SELECT * FROM users,transaction
         WHERE transaction.wallet = users.wallet   
         AND (users.email in (%s)) = (%s) 
-        ORDER BY transaction.timestamp DESC
         '''
     ]
 
@@ -193,16 +199,10 @@ def transfer_stat(request):
     total = cursor.fetchall()
     stat_result['daily'] = total
 
-    stat_result['transaction_list'] = []
-    cursor.execute(query[2], (req_body['user'], isAll,))
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['transaction_list'].append(dict(zip(row_headers, result)))
 
-    # cursor.execute(query[2], (req_body['user'], isAll,))
-    # transaction_list = cursor.fetchall()
-    # stat_result['transaction_list'] = transaction_list
+    cursor.execute(query[2], (req_body['user'], isAll,))
+    transaction_list = cursor.fetchall()
+    stat_result['transaction_list'] = transaction_list
 
     return stat_result
 
@@ -213,34 +213,18 @@ def user_stat(request):
 
     query = [
         '''SELECT COUNT(wallet) FROM users''',
-        '''
-            SELECT service_provider, COUNT(wallet) FROM users
-            GROUP BY service_provider
-        ''',
-        '''
-            SELECT service_provider,date_trunc('day', timestamp), COUNT(*)
-            FROM users
-            GROUP BY service_provider, date_trunc('day', timestamp)
+
+        '''SELECT date_trunc('day', timestamp), 
+            COUNT(*) as count FROM users
+            GROUP BY date_trunc('day', timestamp)
         '''
     ]
 
     cursor.execute(query[0])
     stat_result['total_users'] = cursor.fetchall()[0][0]
 
-    stat_result['total_users_by_pid'] = []
     cursor.execute(query[1])
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['total_users_by_pid'].append(
-            dict(zip(row_headers, result)))
-
-    stat_result['daily_users'] = []
-    cursor.execute(query[2])
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['daily_users'].append(dict(zip(row_headers, result)))
+    stat_result['daily_users'] = cursor.fetchall()
 
     return stat_result
 
