@@ -39,6 +39,7 @@ def index(request):
     return JsonResponse({'admin_email': staff_list})
 
 
+@csrf_exempt
 def db_query(request, table):
     return JsonResponse(utils.db_query(request, table), safe=False)
 
