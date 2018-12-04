@@ -11,9 +11,10 @@ urlpatterns = [
     path('admin/set_limit/<int:amount_limit>/<int:block_limit>',
          views.set_limit, name='set_limit'),
     path('admin/update', views.update_admin, name='update_admin'),
+    # path('admin/current_balance',
+    #      views.get_current_balance, name='current_balance'),
     path('admin/stat', views.transfer_stat, name='transfer_stat'),
-    path('admin/stat/users', views.user_stat, name='user_stat'), 
-    path('admin/current_balance', 
-          views.get_current_balance, name='current_balance'),
+    # path('admin/stat/users', views.user_stat, name='user_stat'),
+    path('admin/summary', views.get_summary, name='get_summary'),
     path('db/<str:table>', views.db_query, name='db_query'),
 ]

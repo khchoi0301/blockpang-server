@@ -25,7 +25,7 @@ from iconsdk.builder.transaction_builder import (
 )
 from . import utils
 
- 
+
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 
@@ -49,13 +49,6 @@ def update_admin(request):
         return JsonResponse(utils.update_admin(request), safe=False)
 
 
-def get_current_balance(request):
-    return JsonResponse({
-        'default_score': default_score,
-        'current_balance': utils.get_block_balance()
-    })
-
-
 def get_highest_gscores(request):
     data = utils.get_highest_gscores(request)
     return JsonResponse(data, safe=False)
@@ -74,13 +67,8 @@ def update_wallet(request):
 
 
 @csrf_exempt  # need to think about security
-def transfer_stat(request):
-    return JsonResponse(utils.transfer_stat(request), safe=False)
-
-
-@csrf_exempt  # need to think about security
-def user_stat(request):
-    return JsonResponse(utils.user_stat(request), safe=False)
+def get_summary(request):
+    return JsonResponse(utils.get_summary(request), safe=False)
 
 
 def set_limit(request, amount_limit, block_limit):
@@ -170,3 +158,19 @@ def req_icx(request):
         result['error_log'] = err
 
     return JsonResponse(result)
+
+
+@csrf_exempt  # need to think about security
+def transfer_stat(request):
+    return JsonResponse(utils.transfer_stat(request), safe=False)
+
+
+# @csrf_exempt  # need to think about security
+# def user_stat(request):
+#     return JsonResponse(utils.user_stat(request), safe=False)
+
+# def get_current_balance(request):
+#     return JsonResponse({
+#         'default_score': default_score,
+#         'current_balance': utils.get_block_balance()
+#     })

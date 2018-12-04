@@ -35,14 +35,16 @@ wallet_from = wallet.get_address()
 
 def db_query(request, table):
     query = [
-        'SELECT * FROM transaction;',
-        'SELECT * from users;',
         '''
         SELECT * FROM users, transaction
         WHERE transaction.wallet = users.wallet
         ORDER BY transaction.timestamp DESC
-        limit 50;
-        ''',
+        ;''',
+        '''
+        SELECT * from users
+        ORDER BY id DESC
+        ;''',
+        'SELECT * FROM transaction;',
         '''
         SELECT * FROM users, transaction
         WHERE transaction.wallet = users.wallet
@@ -59,8 +61,8 @@ def db_query(request, table):
     elif (table == 'users'):
         print('===querying usersDB===')
         cursor.execute(query[1])
-    elif (table == 'latest'):
-        print('===querying latestDB===')
+    elif (table == 'transaction_without_user'):
+        print('===querying transactionDB_without_user===')
         cursor.execute(query[2])
     elif (table == 'today'):
         print('===querying todaysDB===')
@@ -147,102 +149,6 @@ def get_highest_gscores(request):
     for result in query_result:
         data.append(dict(zip(row_headers, result)))
     return data
-
-
-def transfer_stat(request):
-    print('create transfer statistics', request)
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
-
-    if req_body['user'] != '*':
-        isAll = True
-    else:
-        isAll = False
-
-    stat_result = {}
-
-    query = [
-        '''
-        SELECT SUM(transaction.amount),count(transaction.amount) 
-        FROM transaction,users
-        WHERE transaction.wallet = users.wallet
-        AND (users.email in (%s)) = (%s) ;
-        ''',
-        ''' 
-        SELECT date_trunc('day', transaction.timestamp),SUM(transaction.amount), count(transaction.amount) 
-        FROM transaction,users
-        WHERE transaction.wallet = users.wallet   
-        AND (users.email in (%s)) = (%s) 
-        GROUP BY date_trunc('day', transaction.timestamp);  
-        ''',
-        ''' 
-        SELECT * FROM users,transaction
-        WHERE transaction.wallet = users.wallet   
-        AND (users.email in (%s)) = (%s) 
-        ORDER BY transaction.timestamp DESC
-        '''
-    ]
-
-    stat_result['user'] = req_body['user']
-
-    cursor.execute(query[0], (req_body['user'], isAll,))
-    total = cursor.fetchall()[0]
-    stat_result['total_transfer_amount'] = total[0]
-    stat_result['total_transfer'] = total[1]
-
-    cursor.execute(query[1], (req_body['user'], isAll,))
-    total = cursor.fetchall()
-    stat_result['daily'] = total
-
-    stat_result['transaction_list'] = []
-    cursor.execute(query[2], (req_body['user'], isAll,))
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['transaction_list'].append(dict(zip(row_headers, result)))
-
-    # cursor.execute(query[2], (req_body['user'], isAll,))
-    # transaction_list = cursor.fetchall()
-    # stat_result['transaction_list'] = transaction_list
-
-    return stat_result
-
-
-def user_stat(request):
-    print('create users statistics', request)
-    stat_result = {}
-
-    query = [
-        '''SELECT COUNT(wallet) FROM users''',
-        '''
-            SELECT service_provider, COUNT(wallet) FROM users
-            GROUP BY service_provider
-        ''',
-        '''
-            SELECT service_provider,date_trunc('day', timestamp), COUNT(*)
-            FROM users
-            GROUP BY service_provider, date_trunc('day', timestamp)
-        '''
-    ]
-
-    cursor.execute(query[0])
-    stat_result['total_users'] = cursor.fetchall()[0][0]
-
-    stat_result['total_users_by_pid'] = []
-    cursor.execute(query[1])
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['total_users_by_pid'].append(
-            dict(zip(row_headers, result)))
-
-    stat_result['daily_users'] = []
-    cursor.execute(query[2])
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['daily_users'].append(dict(zip(row_headers, result)))
-
-    return stat_result
 
 
 def create_wallet(request):
@@ -341,15 +247,6 @@ def set_limit(request, amount_limit, block_limit):
     return limit_setting
 
 
-def get_block_balance():
-    '''Get a block's balance.'''
-    call = CallBuilder().from_(wallet_from)\
-        .to(default_score)\
-        .method('get_balance')\
-        .build()
-    return int(icon_service.call(call), 16) / 10 ** 18
-
-
 def get_wallet_balance(request, to_address):
     '''Get a wallet balance.'''
     call = CallBuilder().from_(wallet_from)\
@@ -425,3 +322,107 @@ def get_transaction_result(tx_hash):
                 before requesting again"}}
 
     return tx_result
+
+
+# def get_block_balance():
+#     '''Get a block's balance.'''
+#     call = CallBuilder().from_(wallet_from)\
+#         .to(default_score)\
+#         .method('get_balance')\
+#         .build()
+#     return int(icon_service.call(call), 16) / 10 ** 18
+
+
+def transfer_stat(request):
+    print('create transfer statistics', request)
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+
+    if req_body['user'] != '*':
+        isAll = True
+    else:
+        isAll = False
+
+    stat_result = {}
+
+    query = [
+        '''
+        SELECT SUM(transaction.amount),count(transaction.amount)
+        FROM transaction,users
+        WHERE transaction.wallet = users.wallet
+        AND (users.email in (%s)) = (%s) ;
+        ''',
+        '''
+        SELECT date_trunc('day', transaction.timestamp),SUM(transaction.amount), count(transaction.amount)
+        FROM transaction,users
+        WHERE transaction.wallet = users.wallet
+        AND (users.email in (%s)) = (%s)
+        GROUP BY date_trunc('day', transaction.timestamp);
+        ''',
+        '''
+        SELECT * FROM users,transaction
+        WHERE transaction.wallet = users.wallet
+        AND (users.email in (%s)) = (%s)
+        ORDER BY transaction.id DESC
+        '''
+    ]
+
+    stat_result['user'] = req_body['user']
+
+    cursor.execute(query[0], (req_body['user'], isAll,))
+    total = cursor.fetchall()[0]
+    stat_result['total_transfer_amount'] = total[0]
+    stat_result['total_transfer'] = total[1]
+
+    stat_result['daily'] = []
+    cursor.execute(query[1], (req_body['user'], isAll,))
+    row_headers = [x[0] for x in cursor.description]
+    query_result = cursor.fetchall()
+    for result in query_result:
+        stat_result['daily'].append(dict(zip(row_headers, result)))
+
+    stat_result['transaction_list'] = []
+    cursor.execute(query[2], (req_body['user'], isAll,))
+    row_headers = [x[0] for x in cursor.description]
+    query_result = cursor.fetchall()
+    for result in query_result:
+        stat_result['transaction_list'].append(dict(zip(row_headers, result)))
+
+    return stat_result
+
+
+# def user_stat(request):
+#     print('create users statistics', request)
+#     stat_result = {}
+
+#     query = [
+#         '''SELECT COUNT(wallet) FROM users''',
+#         '''
+#             SELECT service_provider, COUNT(wallet) FROM users
+#             GROUP BY service_provider
+#         ''',
+#         '''
+#             SELECT service_provider,date_trunc('day', timestamp), COUNT(*)
+#             FROM users
+#             GROUP BY service_provider, date_trunc('day', timestamp)
+#         '''
+#     ]
+
+#     cursor.execute(query[0])
+#     stat_result['total_users'] = cursor.fetchall()[0][0]
+
+#     stat_result['total_users_by_pid'] = []
+#     cursor.execute(query[1])
+#     row_headers = [x[0] for x in cursor.description]
+#     query_result = cursor.fetchall()
+#     for result in query_result:
+#         stat_result['total_users_by_pid'].append(
+#             dict(zip(row_headers, result)))
+
+#     stat_result['daily_users'] = []
+#     cursor.execute(query[2])
+#     row_headers = [x[0] for x in cursor.description]
+#     query_result = cursor.fetchall()
+#     for result in query_result:
+#         stat_result['daily_users'].append(dict(zip(row_headers, result)))
+
+#     return stat_result
