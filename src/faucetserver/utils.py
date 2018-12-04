@@ -31,10 +31,11 @@ cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 
-print('==========', os.path.dirname(__file__))
-keypath = os.path.join(os.path.dirname(__file__), 'iconkeystore2')
-wallet = KeyWallet.load(keypath, "@icon222")
+
+keypath = os.path.join(os.getcwd(), 'keystore_test1')
+wallet = KeyWallet.load(keypath, "test1_Account")
 wallet_from = wallet.get_address()
+print('keypath: ', keypath)
 
 
 def db_query(request, table):
