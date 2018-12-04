@@ -66,13 +66,10 @@ def update_wallet(request):
         return JsonResponse(utils.update_wallet(request), safe=False)
 
 
-@csrf_exempt  # need to think about security
-def get_summary(request):
-    return JsonResponse(utils.get_summary(request), safe=False)
-
-
-def set_limit(request, amount_limit, block_limit):
-    return JsonResponse(utils.set_limit(request, amount_limit, block_limit))
+@csrf_exempt
+def set_limit(request):
+    if request.method == 'POST':
+        return JsonResponse(utils.set_limit(request))
 
 
 def get_limit(request):

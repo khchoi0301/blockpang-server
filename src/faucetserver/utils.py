@@ -224,11 +224,11 @@ def get_limit():
     return limit
 
 
-def set_limit(request, amount_limit, block_limit):
+def set_limit(request):
     '''Set a max amount and frequency of icx Score can send to user.'''
-    limit_setting = {}
-    limit_setting['amount_limit'] = amount_limit
-    limit_setting['block_limit'] = block_limit
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    amount_limit = req_body['amount_limit']
+    block_limit = req_body['block_limit']
 
     set_limit = CallTransactionBuilder()\
         .from_(wallet.get_address())\
@@ -246,7 +246,8 @@ def set_limit(request, amount_limit, block_limit):
     # Sends the transaction
     tx_hash = str(icon_service.send_transaction(signed_transaction))
     print('set_limit complete', tx_hash)  # added
-    return limit_setting
+    time.sleep(1)
+    return get_limit()
 
 
 def get_wallet_balance(request, to_address):
