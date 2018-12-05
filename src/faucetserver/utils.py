@@ -24,8 +24,6 @@ from iconsdk.builder.transaction_builder import (
     CallTransactionBuilder,
     MessageTransactionBuilder
 )
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
 
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS

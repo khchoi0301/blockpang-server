@@ -8,12 +8,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.db import connections
 import ast
-# import datetime
-# import json
 import os
 import urllib.request
-# from iconsdk.wallet.wallet import KeyWallet
-# from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.builder.call_builder import CallBuilder
@@ -23,7 +19,7 @@ from iconsdk.builder.transaction_builder import (
     CallTransactionBuilder,
     MessageTransactionBuilder
 )
-from . import utils
+from . import utils, utils_admin, utils_db, utils_wallet
 
 
 default_score = settings.DEFAULT_SCORE_ADDRESS
@@ -41,47 +37,44 @@ def index(request):
 
 @csrf_exempt
 def db_query(request, table):
-    return JsonResponse(utils.db_query(request, table), safe=False)
+    return JsonResponse(utils_db.db_query(request, table), safe=False)
 
 
 @csrf_exempt
 def update_admin(request):
     if request.method == 'POST':
-        return JsonResponse(utils.update_admin(request), safe=False)
+        return JsonResponse(utils_admin.update_admin(request), safe=False)
 
 
 def get_highest_gscores(request):
-    data = utils.get_highest_gscores(request)
-    return JsonResponse(data, safe=False)
+    return JsonResponse(utils_db.get_highest_gscores(request), safe=False)
 
 
 @csrf_exempt  # need to think about security
 def create_wallet(request):
     if request.method == 'POST':
-        return JsonResponse(utils.create_wallet(request))
+        return JsonResponse(utils_wallet.create_wallet(request))
 
 
 @csrf_exempt  # need to think about security
 def update_wallet(request):
     if request.method == 'POST':
-        return JsonResponse(utils.update_wallet(request), safe=False)
+        return JsonResponse(utils_wallet.update_wallet(request), safe=False)
 
 
 @csrf_exempt
 def set_limit(request):
     if request.method == 'POST':
-        return JsonResponse(utils.set_limit(request))
+        return JsonResponse(utils_admin.set_limit(request))
 
 
 def get_limit(request):
-    return JsonResponse(utils.get_limit())
+    return JsonResponse(utils_admin.get_limit())
 
 
 @csrf_exempt  # need to think about security
 def req_icx(request):
-
     response = {}
-
     wallet_max_limit = 100
     score_min_limit = 10
     value = 1
@@ -93,12 +86,13 @@ def req_icx(request):
         to_address = req_body['wallet']
         value = int(response['game_score'])
 
-    response['block_balance'] = utils.get_block_balance()
-    response['wallet_balance'] = utils.get_wallet_balance(request, to_address)
+    response['block_balance'] = utils_wallet.get_block_balance()
+    response['wallet_balance'] = utils_wallet.get_wallet_balance(
+        request, to_address)
 
     # send a email to admin when score doesn't have enough icx
     if (response['block_balance'] < score_min_limit):
-        utils.email(str(score_min_limit))
+        utils_admin.email(str(score_min_limit))
         return JsonResponse({
             'status': 'fail',
             'reason': 'Not enough icx in score',
@@ -114,11 +108,13 @@ def req_icx(request):
         })
 
     # transfer icx
-    response['tx_hash'] = utils.send_transaction(request, to_address, value)
+    response['tx_hash'] = utils_wallet.send_transaction(
+        request, to_address, value)
     print('tx_hash', response['tx_hash'])
 
     # Add transaction_result key to result
-    response['tx_result'] = utils.get_transaction_result(response['tx_hash'])
+    response['tx_result'] = utils_wallet.get_transaction_result(
+        response['tx_hash'])
     if (int(response['tx_result']['status']) == 0):
         response['transaction_result'] = 'fail'
     else:
@@ -127,12 +123,13 @@ def req_icx(request):
     # Check result
     response['block_address'] = default_score
     response['wallet_address'] = to_address
-    response['wallet_latest_transaction'] = utils.get_latest_transaction(
+    response['wallet_latest_transaction'] = utils_wallet.get_latest_transaction(
         request, to_address)
-    response['latest_block_height'] = utils.get_latest_block_height()
-    response['latest_block_info'] = utils.get_latest_block()
-    response['block_balance'] = utils.get_block_balance()
-    response['wallet_balance'] = utils.get_wallet_balance(request, to_address)
+    response['latest_block_height'] = utils_wallet.get_latest_block_height()
+    response['latest_block_info'] = utils_wallet.get_latest_block()
+    response['block_balance'] = utils_wallet.get_block_balance()
+    response['wallet_balance'] = utils_wallet.get_wallet_balance(
+        request, to_address)
 
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
@@ -160,15 +157,4 @@ def req_icx(request):
 
 @csrf_exempt  # need to think about security
 def transfer_stat(request):
-    return JsonResponse(utils.transfer_stat(request), safe=False)
-
-
-# @csrf_exempt  # need to think about security
-# def user_stat(request):
-#     return JsonResponse(utils.user_stat(request), safe=False)
-
-# def get_current_balance(request):
-#     return JsonResponse({
-#         'default_score': default_score,
-#         'current_balance': utils.get_block_balance()
-#     })
+    return JsonResponse(utils_db.transfer_stat(request), safe=False)
