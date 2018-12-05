@@ -26,7 +26,7 @@ def index(request):
 
 @csrf_exempt
 def db_query(request, table):
-    return JsonResponse(utils_db.db_query(request, table), safe=False)
+    return JsonResponse(utils_db.db_query(table), safe=False)
 
 
 @csrf_exempt
@@ -35,52 +35,59 @@ def update_admin(request):
         return JsonResponse(utils_admin.update_admin(request), safe=False)
 
 
+# Get highes game score for learder board
 def get_highest_gscores(request):
-    return JsonResponse(utils_db.get_highest_gscores(request), safe=False)
+    return JsonResponse(utils_db.get_highest_gscores(), safe=False)
 
 
-@csrf_exempt  # need to think about security
+# Create Wallet and Wallet address to USERS DB
+@csrf_exempt
 def create_wallet(request):
     if request.method == 'POST':
         return JsonResponse(utils_wallet.create_wallet(request))
 
 
-@csrf_exempt  # need to think about security
+# Add Wallet address to USERS DB
+@csrf_exempt
 def update_wallet(request):
     if request.method == 'POST':
         return JsonResponse(utils_wallet.update_wallet(request), safe=False)
 
 
+# Set MAX ICX transfer limit and MIN block interval lilmit
 @csrf_exempt
 def set_limit(request):
     if request.method == 'POST':
         return JsonResponse(utils_admin.set_limit(request))
 
 
+# Check MAX ICX transfer limit and MIN block interval lilmit
 def get_limit(request):
     return JsonResponse(utils_admin.get_limit())
 
 
-@csrf_exempt  # need to think about security
+# Transfer ICX to the wallet when conditions are satisfied
+@csrf_exempt
 def req_icx(request):
-    response = {}
+    # return Err when request.method is not POST
+    if request.method != 'POST':
+        return 'ERR : request.method should be POST'
+
+    # wallet which has more icx than wallet_max_limit can't receive icx
     wallet_max_limit = 100
-    score_min_limit = 10
-    value = 1
+    # send a email to admin when score has lower icx than score_min_limit
+    score_min_limit = 100
+    response = {}
 
-    # Update game score
-    if request.method == 'POST':
-        req_body = ast.literal_eval(request.body.decode('utf-8'))
-        response['game_score'] = req_body['game_score']
-        to_address = req_body['wallet']
-        value = int(response['game_score'])
-
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    response['game_score'] = req_body['game_score']
+    response['wallet_address'] = req_body['wallet']
     response['block_balance'] = utils_wallet.get_block_balance()
     response['wallet_balance'] = utils_wallet.get_wallet_balance(
-        request, to_address)
+        response['wallet_address'])
 
     # send a email to admin when score doesn't have enough icx
-    if (response['block_balance'] < score_min_limit):
+    if response['block_balance'] < score_min_limit:
         utils_admin.email(str(score_min_limit))
         return JsonResponse({
             'status': 'fail',
@@ -89,7 +96,7 @@ def req_icx(request):
         })
 
     # transfer icx only when wallet's balance is under the limit
-    if (response['wallet_balance'] > wallet_max_limit):
+    if response['wallet_balance'] > wallet_max_limit:
         return JsonResponse({
             'status': 'fail',
             'reason': 'Too much icx in wallet',
@@ -98,7 +105,7 @@ def req_icx(request):
 
     # transfer icx
     response['tx_hash'] = utils_wallet.send_transaction(
-        request, to_address, value)
+        response['wallet_address'], int(response['game_score']))
     print('tx_hash', response['tx_hash'])
 
     # Add transaction_result key to result
@@ -111,14 +118,13 @@ def req_icx(request):
 
     # Check result
     response['block_address'] = default_score
-    response['wallet_address'] = to_address
     response['wallet_latest_transaction'] = utils_wallet.get_latest_transaction(
-        request, to_address)
+        response['wallet_address'])
     response['latest_block_height'] = utils_wallet.get_latest_block_height()
     response['latest_block_info'] = utils_wallet.get_latest_block()
     response['block_balance'] = utils_wallet.get_block_balance()
     response['wallet_balance'] = utils_wallet.get_wallet_balance(
-        request, to_address)
+        response['wallet_address'])
 
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
@@ -126,8 +132,9 @@ def req_icx(request):
         utils_db.insertDB_transaction(
             response['tx_result']['txHash'],
             response['tx_result']['blockHeight'],
-            default_score, to_address, value*0.01, 0.0001,
-            response['game_score'])
+            default_score, response['wallet_address'], int(
+                response['game_score']) * 0.01,
+            0.0001, response['game_score'])
 
     result = {
         'wallet_address': str(response['wallet_address']),

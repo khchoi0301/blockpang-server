@@ -41,7 +41,7 @@ def update_wallet(request):
         return {'status': 'fail', 'error_log': str(e)}
 
 
-def get_wallet_balance(request, to_address):
+def get_wallet_balance(to_address):
     '''Get a wallet balance.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
@@ -51,7 +51,7 @@ def get_wallet_balance(request, to_address):
     return int(icon_service.call(call), 16) / 10 ** 18
 
 
-def send_transaction(request, to_address, value):
+def send_transaction(to_address, value):
     '''Send icx to a wallet.'''
     print('transaction called', to_address, 'value : ', value, type(value))
 
@@ -73,7 +73,7 @@ def send_transaction(request, to_address, value):
     return icon_service.send_transaction(signed_transaction)
 
 
-def get_latest_transaction(request, to_address):
+def get_latest_transaction(to_address):
     '''Get a wallet's latest transaction.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
