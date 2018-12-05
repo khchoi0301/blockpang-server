@@ -143,7 +143,8 @@ def update_admin(request):
 
 def get_highest_gscores(request):
     query = '''
-        SELECT users.email, transaction.wallet, transaction.gscore 
+        SELECT users.email, users.nickname,
+        transaction.wallet, transaction.gscore 
         FROM transaction, users
         WHERE transaction.gscore is NOT NULL 
         AND transaction.wallet = users.wallet
