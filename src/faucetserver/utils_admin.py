@@ -47,35 +47,52 @@ def email(minlimit):
 def update_admin(request):
     req_body = ast.literal_eval(request.body.decode('utf-8'))
     username = req_body['username']
+    email_address = req_body['email']
 
     if req_body['cmd'] == 'add':
-        new_email = req_body['email']
         try:
             new_staff = User.objects.create_user(
                 username=req_body['username'],
                 password=req_body['password'],
-                email=new_email
+                email=email_address
             )
             new_staff.is_superuser = True
             new_staff.is_staff = True
             new_staff.save()
-            print(f'===SUCCESS: {new_email} has been added.===')
-            log = f'SUCCESS: {new_email} has been added to admin list.'
+            print(f'===SUCCESS: {email_address} has been added===')
+            log = f'SUCCESS: {email_address} has been added to admin list'
 
         except IntegrityError:
-            print(f'===ERROR: {new_email} is already in admin list.===')
-            log = f'ERROR: {new_email} is already in admin list.'
-
+            print(f'===ERROR: {email_address} is already in admin list===')
+            log = f'ERROR: {email_address} is already in admin list'
+    
+    elif req_body['cmd'] == 'edit':
+        try:
+            staff = User.objects.get(
+                username=req_body['username'], 
+                is_superuser=True)
+            if staff.email == email_address:
+                print(f'===ERROR: Please provide a different email address===')
+                log = f'ERROR: Please provide a different email address'
+                return {'staff_list': get_admins(), 'logger': log}
+            staff.email = email_address
+            staff.save()
+            print(f'===SUCCESS: {email_address} has been updated===')
+            log = f'SUCCESS: {email_address} has been updated'
+        except Exception as e:
+            print(f'===ERROR: {e}===')
+            log = str(e)
+            
     elif req_body['cmd'] == 'delete':
         try:
             User.objects.get(
                 username=req_body['username'], is_superuser=True).delete()
-            print(f'===SUCCESS: {username} has been deleted.===')
-            log = f'SUCCESS: {username} has been deleted from admin list.'
+            print(f'===SUCCESS: {username} has been deleted===')
+            log = f'SUCCESS: {username} has been deleted from admin list'
 
         except ObjectDoesNotExist:
-            print(f'===ERROR: {username} is not in admin list.===')
-            log = f'ERROR: {username} is not in admin list.'
+            print(f'===ERROR: {username} is not in admin list===')
+            log = f'ERROR: {username} is not in admin list'
 
     return {'staff_list': get_admins(), 'logger': log}
 
