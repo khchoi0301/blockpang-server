@@ -40,7 +40,7 @@ def execute_query(**kwargs):
         # ORDER BY email, id DESC;
 
 
-def db_query(request, table):
+def db_query(table):
     query = [
         '''
         SELECT * FROM users, transaction
@@ -70,7 +70,7 @@ def db_query(request, table):
         return execute_query(query=query[2], table='summary')
 
 
-def get_highest_gscores(request):
+def get_highest_gscores():
     query = '''
         SELECT users.email, transaction.wallet, transaction.gscore, users.nickname 
         FROM transaction, users

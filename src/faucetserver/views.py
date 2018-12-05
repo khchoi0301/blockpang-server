@@ -26,7 +26,7 @@ def index(request):
 
 @csrf_exempt
 def db_query(request, table):
-    return JsonResponse(utils_db.db_query(request, table), safe=False)
+    return JsonResponse(utils_db.db_query(table), safe=False)
 
 
 @csrf_exempt
@@ -37,7 +37,7 @@ def update_admin(request):
 
 # Get highes game score for learder board
 def get_highest_gscores(request):
-    return JsonResponse(utils_db.get_highest_gscores(request), safe=False)
+    return JsonResponse(utils_db.get_highest_gscores(), safe=False)
 
 
 # Create Wallet and Wallet address to USERS DB
@@ -84,7 +84,7 @@ def req_icx(request):
     response['wallet_address'] = req_body['wallet']
     response['block_balance'] = utils_wallet.get_block_balance()
     response['wallet_balance'] = utils_wallet.get_wallet_balance(
-        request, response['wallet_address'])
+        response['wallet_address'])
 
     # send a email to admin when score doesn't have enough icx
     if response['block_balance'] < score_min_limit:
@@ -105,7 +105,7 @@ def req_icx(request):
 
     # transfer icx
     response['tx_hash'] = utils_wallet.send_transaction(
-        request, response['wallet_address'], int(response['game_score']))
+        response['wallet_address'], int(response['game_score']))
     print('tx_hash', response['tx_hash'])
 
     # Add transaction_result key to result
@@ -119,12 +119,12 @@ def req_icx(request):
     # Check result
     response['block_address'] = default_score
     response['wallet_latest_transaction'] = utils_wallet.get_latest_transaction(
-        request, response['wallet_address'])
+        response['wallet_address'])
     response['latest_block_height'] = utils_wallet.get_latest_block_height()
     response['latest_block_info'] = utils_wallet.get_latest_block()
     response['block_balance'] = utils_wallet.get_block_balance()
     response['wallet_balance'] = utils_wallet.get_wallet_balance(
-        request, response['wallet_address'])
+        response['wallet_address'])
 
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
