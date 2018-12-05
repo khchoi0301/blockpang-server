@@ -81,26 +81,6 @@ def db_query(request, table):
         data['score_address'] = default_score
         data['current_balance'] = get_block_balance()
 
-    # pagination of transaction DB
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
-
-    if (table == 'transaction' and 'page' in req_body):
-        page = req_body['page']
-        page_size = req_body['pageSize']
-        paginator = Paginator(data, page_size)  # Show 20 contacts per page
-
-        try:
-            contacts = paginator.page(page)
-            print('contacts', contacts, contacts.object_list)
-        except PageNotAnInteger:
-            # If page is not an integer, deliver first page.
-            contacts = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
-            contacts = paginator.page(paginator.num_pages)
-
-        return str({'pages': contacts, 'data': contacts.object_list})
-
     return data
 
 

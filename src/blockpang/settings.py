@@ -82,7 +82,7 @@ DATABASES = {
         'NAME': 'faucet',
         'USER': 'power_user',
         'PASSWORD': '@tamago111',
-        'HOST': 'localhost',
+        'HOST': '54.180.96.35',
         'PORT': '5432',
     }
 }
