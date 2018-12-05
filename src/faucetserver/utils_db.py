@@ -36,6 +36,9 @@ def execute_query(**kwargs):
         data['current_balance'] = utils_wallet.get_block_balance()
         return data
 
+        # SELECT DISTINCT ON (email) * from users
+        # ORDER BY email, id DESC;
+
 
 def db_query(request, table):
     query = [
@@ -45,8 +48,9 @@ def db_query(request, table):
         ORDER BY transaction.timestamp DESC;
         ''',
         '''
-        SELECT * from users
-        ORDER BY id DESC;
+        SELECT DISTINCT ON (email) * from users
+        ORDER BY email, id DESC
+        ;
         ''',
         '''
         SELECT count(txhash) as total_transfer,
@@ -68,7 +72,7 @@ def db_query(request, table):
 
 def get_highest_gscores(request):
     query = '''
-        SELECT users.email, transaction.wallet, transaction.gscore 
+        SELECT users.email, transaction.wallet, transaction.gscore, users.nickname 
         FROM transaction, users
         WHERE transaction.gscore is NOT NULL 
         AND transaction.wallet = users.wallet
@@ -87,7 +91,7 @@ def get_highest_gscores(request):
 
 
 def var_query(query, var):
-        cursor.execute(query, (var,))
+    cursor.execute(query, (var,))
 
 
 def insertDB_users(request, wallet):
@@ -136,11 +140,11 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
                            wallet, amount, txfee, gscore))
 
     connections['default'].commit()
-    
+
     txhash = req_body['txhash']
     que = 'SELECT * from transaction WHERE txhash = %s;'
     var_query(que, txhash)
-    
+
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     data = []
