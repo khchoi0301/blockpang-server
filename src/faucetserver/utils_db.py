@@ -141,7 +141,6 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
 
     connections['default'].commit()
 
-    txhash = req_body['txhash']
     que = 'SELECT * from transaction WHERE txhash = %s;'
     var_query(que, txhash)
 
