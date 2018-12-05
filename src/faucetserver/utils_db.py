@@ -8,7 +8,7 @@ from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.builder.call_builder import CallBuilder
-from . import utils_wallet
+from . import utils_admin, utils_wallet
 
 
 cursor = connections['default'].cursor()
@@ -34,10 +34,8 @@ def execute_query(**kwargs):
         data = data[0]
         data['score_address'] = default_score
         data['current_balance'] = utils_wallet.get_block_balance()
+        data['admin_email'] = utils_admin.get_admins()
         return data
-
-        # SELECT DISTINCT ON (email) * from users
-        # ORDER BY email, id DESC;
 
 
 def db_query(request, table):
