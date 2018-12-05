@@ -8,7 +8,6 @@ import ast
 import os
 import urllib.request
 import time
-from iconsdk.wallet.wallet import KeyWallet
 from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
@@ -21,14 +20,11 @@ from iconsdk.builder.transaction_builder import (
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
+wallet = settings.WALLET
+wallet_from = settings.WALLET_FROM
 
 
-keypath = os.path.join(os.getcwd(), 'keystore_test1')
-wallet = KeyWallet.load(keypath, "test1_Account")
-wallet_from = wallet.get_address()
-print('keypath: ', keypath)
-
-
+# Get a list of current admins
 def get_admins():
     staff_list = []
     staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
@@ -45,7 +41,6 @@ def email(minlimit):
     email_from = settings.EMAIL_HOST_USER
     send_mail(subject, message, email_from, recipient)
     print('===SUCCESS: email has been sent.===')
-    print(recipient)
     return 'Email has been sent to admins.'
 
 
@@ -56,7 +51,6 @@ def update_admin(request):
     if req_body['cmd'] == 'add':
         new_email = req_body['email']
         try:
-            print('not in staff list', req_body)
             new_staff = User.objects.create_user(
                 username=req_body['username'],
                 password=req_body['password'],
@@ -87,7 +81,6 @@ def update_admin(request):
 
 
 def get_limit():
-    '''Get limits.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method('get_limit')\
@@ -101,7 +94,6 @@ def get_limit():
 
 
 def set_limit(request):
-    '''Set a max amount and frequency of icx Score can send to user.'''
     req_body = ast.literal_eval(request.body.decode('utf-8'))
     amount_limit = req_body['amount_limit']
     block_limit = req_body['block_limit']
@@ -119,8 +111,8 @@ def set_limit(request):
     # Returns the signed transaction object having a signature
     signed_transaction = SignedTransaction(set_limit, wallet)
 
-    # Sends the transaction
+    # Send transaction
     tx_hash = str(icon_service.send_transaction(signed_transaction))
-    print('set_limit complete', tx_hash)  # added
+    print(f'===set_limit complete: {tx_hash}')
     time.sleep(1)
     return get_limit()

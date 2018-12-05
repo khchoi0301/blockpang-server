@@ -1,5 +1,6 @@
 from django.db import connections
 from django.conf import settings
+import ast
 import os
 import urllib.request
 import time
@@ -18,11 +19,8 @@ from . import utils_db
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
-
-keypath = os.path.join(os.getcwd(), 'keystore_test1')
-wallet = KeyWallet.load(keypath, "test1_Account")
-wallet_from = wallet.get_address()
-print('keypath: ', keypath)
+wallet = settings.WALLET
+wallet_from = settings.WALLET_FROM
 
 
 def create_wallet(request):
@@ -35,25 +33,25 @@ def create_wallet(request):
 
 
 def update_wallet(request):
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
     try:
-        return utils_db.insertDB_users(request, 'include wallet address')
+        return utils_db.insertDB_users(request, req_body['wallet'])
     except Exception as e:
-        return {'status': 'fail', 'error_log': str(e)}
+        return {'status': 'fail', 'Error': str(e)}
 
 
-def get_wallet_balance(to_address):
-    '''Get a wallet balance.'''
+def get_wallet_balance(wallet_address):
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method('get_wallet_balance')\
-        .params({'_to': to_address})\
+        .params({'_to': wallet_address})\
         .build()
     return int(icon_service.call(call), 16) / 10 ** 18
 
 
-def send_transaction(to_address, value):
-    '''Send icx to a wallet.'''
-    print('transaction called', to_address, 'value : ', value, type(value))
+# Send ICX to wallet
+def send_transaction(wallet_address, value):
+    print('transaction called', wallet_address, 'value: ', value, type(value))
 
     transaction = CallTransactionBuilder()\
         .from_(wallet.get_address())\
@@ -62,7 +60,7 @@ def send_transaction(to_address, value):
         .nid(3)\
         .nonce(100)\
         .method('send_icx')\
-        .params({'_to': to_address, 'value': int(value)})\
+        .params({'_to': wallet_address, 'value': int(value)})\
         .build()
 
     # Returns the signed transaction object having a signature
@@ -73,18 +71,17 @@ def send_transaction(to_address, value):
     return icon_service.send_transaction(signed_transaction)
 
 
-def get_latest_transaction(to_address):
-    '''Get a wallet's latest transaction.'''
+# Get user wallet's latest transaction
+def get_latest_transaction(wallet_address):
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method('find_latest_transaction')\
-        .params({'_to': to_address})\
+        .params({'_to': wallet_address})\
         .build()
     return int(icon_service.call(call), 16)
 
 
 def get_latest_block_height():
-    '''Get the latest block's height.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method('block_height')\
@@ -93,12 +90,10 @@ def get_latest_block_height():
 
 
 def get_latest_block():
-    '''Get the latest block.'''
     return icon_service.get_block('latest')
 
 
 def get_transaction_result(tx_hash):
-    # check the transaction result
     try:
         time.sleep(6)
         print('6s')
@@ -109,17 +104,13 @@ def get_transaction_result(tx_hash):
         print('12s')
         try:
             tx_result = icon_service.get_transaction_result(tx_hash)
-        except:
-            tx_result = {'failure': {
-                'code': '0x7d65',
-                'message': "Please wait for few blocks to be created \
-                before requesting again"}}
+        except Exception as e:
+            return {'status': 'fail', 'Error': str(e)}
 
     return tx_result
 
 
 def get_block_balance():
-    '''Get a block's balance.'''
     call = CallBuilder().from_(wallet_from)\
         .to(default_score)\
         .method('get_balance')\

@@ -28,14 +28,14 @@ def index(request):
 def db_query(request, table):
     return JsonResponse(utils_db.db_query(table), safe=False)
 
-
+# Add or delete admin from admin list
 @csrf_exempt
 def update_admin(request):
     if request.method == 'POST':
         return JsonResponse(utils_admin.update_admin(request), safe=False)
 
 
-# Get highes game score for learder board
+# Get highes game score for learderboard
 def get_highest_gscores(request):
     return JsonResponse(utils_db.get_highest_gscores(), safe=False)
 
@@ -54,7 +54,7 @@ def update_wallet(request):
         return JsonResponse(utils_wallet.update_wallet(request), safe=False)
 
 
-# Set MAX ICX transfer limit and MIN block interval lilmit
+# Set MAX ICX transfer limit and MIN block interval limit
 @csrf_exempt
 def set_limit(request):
     if request.method == 'POST':
@@ -71,7 +71,7 @@ def get_limit(request):
 def req_icx(request):
     # return Err when request.method is not POST
     if request.method != 'POST':
-        return 'ERR : request.method should be POST'
+        return '===ERROR : request.method should be POST'
 
     # wallet which has more icx than wallet_max_limit can't receive icx
     wallet_max_limit = 100
@@ -92,7 +92,7 @@ def req_icx(request):
         return JsonResponse({
             'status': 'fail',
             'reason': 'Not enough icx in score',
-            'error_log': f'Score has less than {score_min_limit}'
+            'log': f'Score has less than {score_min_limit}'
         })
 
     # transfer icx only when wallet's balance is under the limit
@@ -100,7 +100,7 @@ def req_icx(request):
         return JsonResponse({
             'status': 'fail',
             'reason': 'Too much icx in wallet',
-            'error_log': f'Wallet has more than {wallet_max_limit}'
+            'log': f'Wallet has more than {wallet_max_limit}'
         })
 
     # transfer icx
@@ -146,7 +146,7 @@ def req_icx(request):
 
     if result['transaction_result'] == 'fail':
         err = response['tx_result']['failure']['message']
-        result['error_log'] = err
+        result['log'] = err
 
     return JsonResponse(result)
 
