@@ -15,9 +15,7 @@ from iconsdk.providers.http_provider import HTTPProvider
 from iconsdk.builder.call_builder import CallBuilder
 from iconsdk.builder.transaction_builder import (
     TransactionBuilder,
-    DeployTransactionBuilder,
     CallTransactionBuilder,
-    MessageTransactionBuilder
 )
 
 cursor = connections['default'].cursor()

@@ -1,10 +1,6 @@
-# from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core import serializers
 from django.conf import settings
-from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.db import connections
 import ast
@@ -12,14 +8,7 @@ import os
 import urllib.request
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
-from iconsdk.builder.call_builder import CallBuilder
-from iconsdk.builder.transaction_builder import (
-    TransactionBuilder,
-    DeployTransactionBuilder,
-    CallTransactionBuilder,
-    MessageTransactionBuilder
-)
-from . import utils, utils_admin, utils_db, utils_wallet
+from . import utils_admin, utils_db, utils_wallet
 
 
 default_score = settings.DEFAULT_SCORE_ADDRESS
