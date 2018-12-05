@@ -160,6 +160,14 @@ def transfer_stat(request):
         GROUP BY date_trunc('month', transaction.timestamp);
         ''',
         '''
+        SELECT date_trunc('day', transaction.timestamp),
+        SUM(transaction.amount), count(transaction.amount)
+        FROM transaction,users
+        WHERE transaction.wallet = users.wallet
+        AND (users.email in (%s)) = (%s)
+        GROUP BY date_trunc('day', transaction.timestamp);
+        ''',
+        '''
         SELECT * FROM users,transaction
         WHERE transaction.wallet = users.wallet
         AND (users.email in (%s)) = (%s)
@@ -187,8 +195,18 @@ def transfer_stat(request):
     for result in query_result:
         stat_result['monthly'].append(dict(zip(row_headers, result)))
 
-    stat_result['transaction_list'] = []
+    for result in stat_result['monthly']:
+        result['month'] = result['month'].month
+
+    stat_result['daily'] = []
     cursor.execute(query[2], (req_body['user'], isAll,))
+    row_headers = [x[0] for x in cursor.description]
+    query_result = cursor.fetchall()
+    for result in query_result:
+        stat_result['daily'].append(dict(zip(row_headers, result)))
+
+    stat_result['transaction_list'] = []
+    cursor.execute(query[3], (req_body['user'], isAll,))
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     for result in query_result:
