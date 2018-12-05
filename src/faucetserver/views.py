@@ -123,7 +123,7 @@ def req_icx(request):
     if not response['tx_result']['eventLogs']:
         print(response['tx_result']['failure'])
     else:
-        utils.insertDB_transaction(
+        utils_db.insertDB_transaction(
             response['tx_result']['txHash'],
             response['tx_result']['blockHeight'],
             default_score, to_address, value*0.01, 0.0001,
