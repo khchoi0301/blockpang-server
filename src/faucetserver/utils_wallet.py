@@ -98,7 +98,6 @@ def get_transaction_result(tx_hash):
         time.sleep(6)
         print('6s')
         tx_result = icon_service.get_transaction_result(tx_hash)
-
     except:
         time.sleep(6)
         print('12s')
@@ -106,7 +105,6 @@ def get_transaction_result(tx_hash):
             tx_result = icon_service.get_transaction_result(tx_hash)
         except Exception as e:
             return {'status': 'fail', 'Error': str(e)}
-
     return tx_result
 
 
