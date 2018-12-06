@@ -35,6 +35,7 @@ def execute_query(**kwargs):
         return data
     else:
         data = data[0]
+        data['total_user'] = len(db_query('users'))
         data['score_address'] = default_score
         data['current_balance'] = utils_wallet.get_block_balance()
         data['admin_email'] = utils_admin.get_admins()
@@ -50,13 +51,13 @@ def db_query(table):
         ''',
         '''
         SELECT DISTINCT ON (user_pid) * from users
-        ORDER BY  user_pid, id DESC        ;
+        ORDER BY  user_pid, id DESC;
         ''',
         '''
-        SELECT count(txhash) as total_transfer,
-        sum(amount) as total_transfer_amount,
-        count(DISTINCT user_pid) as total_users
-        from transaction, users;
+        SELECT count(transaction.block) as total_transfer,
+        sum(transaction.amount) as total_transfer_amount
+        FROM transaction, users
+        WHERE transaction.wallet = users.wallet;
         ''',
         '''
         SELECT users.email, users.nickname,
