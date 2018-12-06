@@ -42,8 +42,8 @@ def db_query(table):
         ORDER BY transaction.timestamp DESC;
         ''',
         '''
-        SELECT DISTINCT ON (email) * from users
-        ORDER BY email, id DESC
+        SELECT DISTINCT ON (email, user_pid) * from users
+        ORDER BY email, user_pid, id DESC
         ;
         ''',
         '''
@@ -157,7 +157,9 @@ def transfer_stat(request):
         FROM transaction,users
         WHERE transaction.wallet = users.wallet
         AND (users.email in (%s)) = (%s)
-        GROUP BY date_trunc('month', transaction.timestamp);
+        GROUP BY date_trunc('month', transaction.timestamp)
+        ORDER BY date_trunc('month', transaction.timestamp);
+
         ''',
         '''
         SELECT date_trunc('day', transaction.timestamp),
@@ -165,7 +167,8 @@ def transfer_stat(request):
         FROM transaction,users
         WHERE transaction.wallet = users.wallet
         AND (users.email in (%s)) = (%s)
-        GROUP BY date_trunc('day', transaction.timestamp);
+        GROUP BY date_trunc('day', transaction.timestamp)
+        ORDER BY date_trunc('day', transaction.timestamp);
         ''',
         '''
         SELECT * FROM users,transaction
