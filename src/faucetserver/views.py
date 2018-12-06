@@ -35,11 +35,6 @@ def update_admin(request):
         return JsonResponse(utils_admin.update_admin(request), safe=False)
 
 
-# Get highes game score for learderboard
-def get_highest_gscores(request):
-    return JsonResponse(utils_db.get_highest_gscores(), safe=False)
-
-
 # Create Wallet and Wallet address to USERS DB
 @csrf_exempt
 def create_wallet(request):
