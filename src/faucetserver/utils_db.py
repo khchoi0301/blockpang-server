@@ -18,12 +18,19 @@ wallet_from = settings.WALLET_FROM
 
 
 def execute_query(**kwargs):
-    cursor.execute(kwargs['query'])
+    if ('var' in kwargs):
+        var = kwargs['var']
+        cursor.execute(kwargs['query'], (var,))
+    else:
+        cursor.execute(kwargs['query'])
+
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
     data = []
+
     for result in query_result:
         data.append(dict(zip(row_headers, result)))
+
     if ('table' not in kwargs):
         return data
     else:
@@ -43,16 +50,25 @@ def db_query(table):
         ''',
         '''
         SELECT DISTINCT ON (email) * from users
-        ORDER BY email, id DESC
-        ;
+        ORDER BY email, id DESC;
         ''',
         '''
         SELECT count(txhash) as total_transfer,
         sum(amount) as total_transfer_amount,
-        count(DISTINCT wallet) as total_users
-        from transaction;
+        count(DISTINCT user_pid) as total_users
+        from transaction, users;
+        ''',
+        '''
+        SELECT users.email, users.nickname,
+        transaction.wallet, transaction.gscore
+        FROM transaction, users
+        WHERE transaction.gscore is NOT NULL 
+        AND transaction.wallet = users.wallet
+        ORDER BY gscore DESC
+        limit 10;
         '''
     ]
+
     if (table == 'transaction'):
         print('===querying transactionDB===')
         return execute_query(query=query[0])
@@ -62,31 +78,9 @@ def db_query(table):
     elif (table == 'summary'):
         print('===querying summary===')
         return execute_query(query=query[2], table='summary')
-
-
-def get_highest_gscores():
-    query = '''
-        SELECT users.email, users.nickname,
-        transaction.wallet, transaction.gscore
-        FROM transaction, users
-        WHERE transaction.gscore is NOT NULL 
-        AND transaction.wallet = users.wallet
-        ORDER BY gscore DESC
-        limit 10;
-    '''
-
-    cursor.execute(query)
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    data = []
-    for result in query_result:
-        data.append(dict(zip(row_headers, result)))
-
-    return data
-
-
-def var_query(query, var):
-    cursor.execute(query, (var,))
+    elif (table == 'leaderboard'):
+        print('===querying leaderboard===')
+        return execute_query(query=query[3])
 
 
 def insertDB_users(request, wallet):
@@ -108,15 +102,7 @@ def insertDB_users(request, wallet):
 
     user_pid = req_body['user_pid']
     que = 'SELECT * from users WHERE user_pid = %s ORDER BY id DESC;'
-    var_query(que, user_pid)
-
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    data = []
-    for result in query_result:
-        data.append(dict(zip(row_headers, result)))
-
-    return data[0]
+    return execute_query(query=que, var=user_pid)[0]
 
 
 def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
@@ -131,15 +117,7 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
     connections['default'].commit()
 
     que = 'SELECT * from transaction WHERE txhash = %s;'
-    var_query(que, txhash)
-
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    data = []
-    for result in query_result:
-        data.append(dict(zip(row_headers, result)))
-
-    return data
+    return execute_query(query=que, var=txhash)
 
 
 def transfer_stat(request):
