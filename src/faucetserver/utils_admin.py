@@ -1,13 +1,24 @@
 from django.db import connections
 from django.conf import settings
+from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.db import IntegrityError
+from django.views.decorators.csrf import csrf_exempt
 import ast
 import os
 import urllib.request
 import time
+from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_200_OK
+)
+from rest_framework.response import Response
 from iconsdk.signed_transaction import SignedTransaction
 from iconsdk.icon_service import IconService
 from iconsdk.providers.http_provider import HTTPProvider
@@ -22,6 +33,25 @@ default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 wallet = settings.WALLET
 wallet_from = settings.WALLET_FROM
+
+
+# Check admin username and password, and then give token
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes((AllowAny,))
+def get_token(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    if username is None or password is None:
+        return Response(
+            {'error': 'Please provide both username and password'},
+            status=HTTP_400_BAD_REQUEST)
+    user = authenticate(username=username, password=password)
+    if not user:
+        return Response(
+            {'error': 'Invalid Credentials'}, status=HTTP_404_NOT_FOUND)
+    token, _ = Token.objects.get_or_create(user=user)
+    return Response({'token': 'Token ' + token.key}, status=HTTP_200_OK)
 
 
 # Get a list of current admins
