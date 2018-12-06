@@ -42,8 +42,8 @@ def db_query(table):
         ORDER BY transaction.timestamp DESC;
         ''',
         '''
-        SELECT DISTINCT ON (email, user_pid) * from users
-        ORDER BY email, user_pid, id DESC
+        SELECT DISTINCT ON (user_pid) * from users
+        ORDER BY  user_pid, id DESC
         ;
         ''',
         '''
@@ -172,7 +172,7 @@ def transfer_stat(request):
         ORDER BY date_trunc('day', transaction.timestamp) DESC;
         ''',
         '''
-        SELECT * FROM users,transaction
+        SELECT transaction.*, users.email FROM users,transaction
         WHERE transaction.wallet = users.wallet
         AND (users.email in (%s)) 
         ORDER BY transaction.id DESC
