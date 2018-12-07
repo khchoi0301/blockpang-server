@@ -8,8 +8,9 @@ from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 import ast
 import os
-import urllib.request
+import re
 import time
+import urllib.request
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -64,6 +65,12 @@ def get_admins():
     return staff_list
 
 
+def is_valid_email(email):
+    if len(email) > 7:
+        return bool(re.match(
+            "^.+@(\[?)[a-zA-Z0-9-.]+.([a-zA-Z]{2,3}|[0-9]{1,3})(]?)$", email))
+
+
 def email(minlimit):
     recipient = get_admins()
     subject = 'Icon Faucet: Not enough icx'
@@ -80,17 +87,16 @@ def update_admin(request):
 
     try:
         email_address = req_body['email']
-        if len(email_address) < 1 or '@' not in email_address \
-        or '.com' not in email_address:
+        if not is_valid_email(email_address):
             print(f'===ERROR: Please enter a valid email address===')
             return {
-                'admin': get_admins(), 
+                'admin_email': get_admins(), 
                 'log': 'ERROR: Please enter a valid email address'}
     except Exception:
         email_address = None
         # will need to change this when 'add' and 'delete' params are back
         print(f'===ERROR: No email address===')
-        return {'admin': get_admins(), 'log': 'ERROR: No email address'}
+        return {'admin_email': get_admins(), 'log': 'ERROR: No email address'}
 
     # -----Add new superuser-----
     # if req_body['cmd'] == 'add':
@@ -117,7 +123,7 @@ def update_admin(request):
             if staff.email == email_address:
                 print(f'===ERROR: Please provide a different email address===')
                 log = f'ERROR: Please provide a different email address'
-                return {'admin': get_admins(), 'log': log}
+                return {'admin_email': get_admins(), 'log': log}
             staff.email = email_address
             staff.save()
             print(f'===SUCCESS: {email_address} has been updated===')
@@ -138,7 +144,7 @@ def update_admin(request):
     #         print(f'===ERROR: {username} is not in admin list===')
     #         log = f'ERROR: {username} is not in admin list'
 
-    return {'admin': get_admins(), 'log': log}
+    return {'admin_email': get_admins(), 'log': log}
 
 
 def get_limit():

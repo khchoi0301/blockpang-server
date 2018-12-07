@@ -26,11 +26,24 @@ def index(request):
     return JsonResponse({'admin_email': staff_list})
 
 
+@api_view(['GET'])
+@permission_classes([AllowAny,]) # Remove this when frontend is ready
 @csrf_exempt
 def db_query(request, table):
     return JsonResponse(utils_db.db_query(table), safe=False)
 
+
+# Show monthly, daily and total stats by user
+@api_view(['POST'])
+@permission_classes([AllowAny,]) # Remove this when frontend is ready
+@csrf_exempt
+def transfer_stat(request):
+    return JsonResponse(utils_db.transfer_stat(request), safe=False)
+
+
 # Add or delete admin from admin list
+@api_view(['POST'])
+@permission_classes([AllowAny,]) # Remove this when frontend is ready
 @csrf_exempt
 def update_admin(request):
     if request.method == 'POST':
@@ -38,6 +51,8 @@ def update_admin(request):
 
 
 # Create Wallet and Wallet address to USERS DB
+@api_view(['POST'])
+@permission_classes([AllowAny,])
 @csrf_exempt
 def create_wallet(request):
     if request.method == 'POST':
@@ -45,6 +60,8 @@ def create_wallet(request):
 
 
 # Add Wallet address to USERS DB
+@api_view(['POST'])
+@permission_classes([AllowAny,])
 @csrf_exempt
 def update_wallet(request):
     if request.method == 'POST':
@@ -52,6 +69,8 @@ def update_wallet(request):
 
 
 # Set MAX ICX transfer limit and MIN block interval limit
+@api_view(['POST'])
+@permission_classes([AllowAny,]) # Remove this when frontend is ready
 @csrf_exempt
 def set_limit(request):
     if request.method == 'POST':
@@ -59,14 +78,17 @@ def set_limit(request):
 
 
 # Check MAX ICX transfer limit and MIN block interval lilmit
+@api_view(['GET'])
+@permission_classes([AllowAny,]) # Remove this when frontend is ready
 def get_limit(request):
     return JsonResponse(utils_admin.get_limit())
 
 
 # Transfer ICX to the wallet when conditions are satisfied
+@api_view(['POST'])
+@permission_classes([AllowAny,])
 @csrf_exempt
 def req_icx(request):
-    # return Err when request.method is not POST
     if request.method != 'POST':
         return '===ERROR : request.method should be POST'
 
@@ -146,8 +168,3 @@ def req_icx(request):
         result['log'] = err
 
     return JsonResponse(result)
-
-
-@csrf_exempt  # need to think about security
-def transfer_stat(request):
-    return JsonResponse(utils_db.transfer_stat(request), safe=False)
