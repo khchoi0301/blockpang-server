@@ -184,7 +184,7 @@ def execute_stat_query(**kwargs):
     for n in range(1,4):
         current_query = query[n]
         if n == 3:
-            cursor.execute(current_query, (req['user']))
+            cursor.execute(current_query, (req['user'], ))
         else:
             cursor.execute(current_query, (req['user'], isAll,))
         row_headers = [x[0] for x in cursor.description]
