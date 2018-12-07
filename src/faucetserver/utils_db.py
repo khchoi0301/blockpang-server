@@ -17,31 +17,6 @@ wallet = settings.WALLET
 wallet_from = settings.WALLET_FROM
 
 
-def execute_query(**kwargs):
-    if ('var' in kwargs):
-        var = kwargs['var']
-        cursor.execute(kwargs['query'], (var,))
-    else:
-        cursor.execute(kwargs['query'])
-
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    data = []
-
-    for result in query_result:
-        data.append(dict(zip(row_headers, result)))
-
-    if ('table' not in kwargs):
-        return data
-    else:
-        data = data[0]
-        data['total_user'] = len(db_query('users'))
-        data['score_address'] = default_score
-        data['current_balance'] = utils_wallet.get_block_balance()
-        data['admin_email'] = utils_admin.get_admins()
-        return data
-
-
 def db_query(table):
     query = [
         '''
@@ -84,43 +59,6 @@ def db_query(table):
         return execute_query(query=query[3])
 
 
-def insertDB_users(request, wallet):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
-    req_body['wallet'] = wallet
-
-    query = '''
-        INSERT INTO users 
-        (service_provider, wallet, email, user_pid, profile_img_url, nickname) 
-        VALUES (%s,%s,%s,%s,%s,%s)
-        '''
-
-    cursor.execute(query, (
-        req_body['service_provider'], req_body['wallet'], req_body['email'],
-        req_body['user_pid'], req_body['profile_img_url'],
-        req_body['nickname']))
-
-    connections['default'].commit()
-
-    user_pid = req_body['user_pid']
-    que = 'SELECT * from users WHERE user_pid = %s ORDER BY id DESC;'
-    return execute_query(query=que, var=user_pid)[0]
-
-
-def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
-    query = '''
-        INSERT INTO transaction 
-        (txhash, block, score, wallet, amount, txfee, gscore) 
-        VALUES (%s,%s,%s,%s,%s,%s,%s)
-        '''
-    cursor.execute(query, (txhash, block, score,
-                           wallet, amount, txfee, gscore))
-
-    connections['default'].commit()
-
-    que = 'SELECT * from transaction WHERE txhash = %s;'
-    return execute_query(query=que, var=txhash)
-
-
 def transfer_stat(request):
     req_body = ast.literal_eval(request.body.decode('utf-8'))
     query = [
@@ -139,7 +77,6 @@ def transfer_stat(request):
         AND (users.email in (%s)) = (%s)
         GROUP BY date_trunc('month', transaction.timestamp)
         ORDER BY date_trunc('month', transaction.timestamp) DESC;
-
         ''',
         '''
         SELECT date_trunc('day', transaction.timestamp),
@@ -163,36 +100,104 @@ def transfer_stat(request):
     else:
         isAll = False
 
-    stat_result = {}
+    return execute_stat_query(req_body=req_body, query=query, isAll=isAll)
 
-    stat_result['user'] = req_body['user']
-    cursor.execute(query[0], (req_body['user'], isAll,))
-    total = cursor.fetchall()[0]
-    stat_result['total_transfer_amount'] = total[0]
-    stat_result['total_transfer'] = total[1]
 
-    stat_result['monthly'] = []
-    cursor.execute(query[1], (req_body['user'], isAll,))
+# Insert a new row to users table
+def insertDB_users(request, wallet):
+    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body['wallet'] = wallet
+
+    query = '''
+        INSERT INTO users 
+        (service_provider, wallet, email, user_pid, profile_img_url, nickname) 
+        VALUES (%s,%s,%s,%s,%s,%s)
+        '''
+
+    cursor.execute(query, (
+        req_body['service_provider'], req_body['wallet'], req_body['email'],
+        req_body['user_pid'], req_body['profile_img_url'],
+        req_body['nickname']))
+
+    connections['default'].commit()
+
+    user_pid = req_body['user_pid']
+    que = 'SELECT * from users WHERE user_pid = %s ORDER BY id DESC;'
+    return execute_query(query=que, var=user_pid)[0]
+
+
+# Insert a new row to transaction table
+def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
+    query = '''
+        INSERT INTO transaction 
+        (txhash, block, score, wallet, amount, txfee, gscore) 
+        VALUES (%s,%s,%s,%s,%s,%s,%s)
+        '''
+    cursor.execute(query, (txhash, block, score,
+                           wallet, amount, txfee, gscore))
+
+    connections['default'].commit()
+
+    que = 'SELECT * from transaction WHERE txhash = %s;'
+    return execute_query(query=que, var=txhash)
+
+
+# A helper function called by db_query
+def execute_query(**kwargs):
+    if ('var' in kwargs):
+        var = kwargs['var']
+        cursor.execute(kwargs['query'], (var,))
+    else:
+        cursor.execute(kwargs['query'])
+
     row_headers = [x[0] for x in cursor.description]
     query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['monthly'].append(dict(zip(row_headers, result)))
+    data = []
 
-    for result in stat_result['monthly']:
+    for result in query_result:
+        data.append(dict(zip(row_headers, result)))
+
+    if ('table' not in kwargs):
+        return data
+    else:
+        data = data[0]
+        data['total_user'] = len(db_query('users'))
+        data['score_address'] = default_score
+        data['current_balance'] = utils_wallet.get_block_balance()
+        data['admin_email'] = utils_admin.get_admins()
+        return data
+
+# A helper function called by transfer_stat
+def execute_stat_query(**kwargs):
+    req = kwargs['req_body']
+    query = kwargs['query']
+    isAll = kwargs['isAll']
+
+    data = {}
+    data['user'] = req['user']
+    data['monthly'] = []
+    data['daily'] = []
+    data['transaction_list'] = []
+
+    cols = ['', 'monthly', 'daily', 'transaction_list']
+    
+    for n in range(1,4):
+        current_query = query[n]
+        if n == 3:
+            cursor.execute(current_query, (req['user']))
+        else:
+            cursor.execute(current_query, (req['user'], isAll,))
+        row_headers = [x[0] for x in cursor.description]
+        query_result = cursor.fetchall()
+        for result in query_result:
+            data[cols[n]].append(dict(zip(row_headers, result)))
+    
+    for result in data['monthly']:
         result['month'] = result['month'].month
+    cursor.execute(query[0], (req['user'], isAll,))
+    total = cursor.fetchall()[0]
+    data['total_transfer_amount'] = total[0]
+    data['total_transfer'] = total[1]
 
-    stat_result['daily'] = []
-    cursor.execute(query[2], (req_body['user'], isAll,))
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['daily'].append(dict(zip(row_headers, result)))
+    return data
 
-    stat_result['transaction_list'] = []
-    cursor.execute(query[3], (req_body['user'],))
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    for result in query_result:
-        stat_result['transaction_list'].append(dict(zip(row_headers, result)))
-
-    return stat_result
