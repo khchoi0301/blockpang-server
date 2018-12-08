@@ -22,7 +22,6 @@ def index(request):
     staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
     for staff in staffs:
         staff_list.append(staff)
-    print(staff_list)
     return JsonResponse({'admin_email': staff_list})
 
 
@@ -66,6 +65,20 @@ def create_wallet(request):
 def update_wallet(request):
     if request.method == 'POST':
         return JsonResponse(utils_wallet.update_wallet(request), safe=False)
+
+
+# Get wallet balance
+@api_view(['POST'])
+@permission_classes([AllowAny, ])
+@csrf_exempt
+def get_wallet_balance(request):
+    if request.method == 'POST':
+        req_body = ast.literal_eval(request.body.decode('utf-8'))
+        wallet_address = req_body['wallet']
+        return JsonResponse({
+            'wallet': wallet_address,
+            'wallet_balance': utils_wallet.get_wallet_balance(wallet_address)},
+            safe=False)
 
 
 # Set MAX ICX transfer limit and MIN block interval limit
