@@ -18,23 +18,12 @@ WALLET = KeyWallet.load(KEYPATH, "test1_Account")
 WALLET_FROM = WALLET.get_address()
 
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '-k6p2ni_^c^n&gfk9sva07z!ov8dva=lh9w$^vj=148gvz&vaf'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
+DEBUG = False
 ALLOWED_HOSTS = ['*']
-
 DEFAULT_SCORE_ADDRESS = 'cxffcc56806535faba51f3429cd12c21e9e28e1ec4'
 ICON_SERVICE_PROVIDER = "https://bicon.net.solidwallet.io/api/v3"
-# ICON_SERVICE_PROVIDER = "http://127.0.0.1:9000/api/v3"
 
 
 INSTALLED_APPS = [
