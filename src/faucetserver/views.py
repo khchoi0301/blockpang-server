@@ -96,7 +96,7 @@ def req_icx(request):
     req_body = ast.literal_eval(request.body.decode('utf-8'))
 
     # wallet which has more icx than wallet_max_limit can't receive icx
-    wallet_max_limit = 1
+    wallet_max_limit = 100
     # send a email to admin when score has lower icx than score_min_limit
     score_min_limit = 100
 
