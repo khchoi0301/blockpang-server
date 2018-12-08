@@ -11,6 +11,7 @@ urlpatterns = [
     path('db/<str:table>', views.db_query),
     path('wallet/create', views.create_wallet),
     path('wallet/update', views.update_wallet),
+    path('wallet/balance', views.get_wallet_balance),
     path('token', utils_admin.get_token),
     path('transfer', views.req_icx),
 ]

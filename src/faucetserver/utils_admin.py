@@ -61,7 +61,6 @@ def get_admins():
     staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
     for staff in staffs:
         staff_list.append(staff)
-    print(f'Admin: {staff_list}')
     return staff_list
 
 
@@ -77,7 +76,6 @@ def email(minlimit):
     message = f'Score has less than {minlimit} icx. Please add icx to score.'
     email_from = settings.EMAIL_HOST_USER
     send_mail(subject, message, email_from, recipient)
-    print('===SUCCESS: email has been sent.===')
     return 'Email has been sent to admins.'
 
 
@@ -88,14 +86,12 @@ def update_admin(request):
     try:
         email_address = req_body['email']
         if not is_valid_email(email_address):
-            print(f'===ERROR: Please enter a valid email address===')
             return {
                 'admin_email': get_admins(), 
                 'log': 'ERROR: Please enter a valid email address'}
     except Exception:
         email_address = None
         # will need to change this if 'add' and 'delete' params return
-        print(f'===ERROR: No email address===')
         return {'admin_email': get_admins(), 'log': 'ERROR: No email address'}
 
     # -----Add new superuser-----
@@ -121,15 +117,12 @@ def update_admin(request):
         try:
             staff = User.objects.get(username=username, is_superuser=True)
             if staff.email == email_address:
-                print(f'===ERROR: Please provide a different email address===')
                 log = f'ERROR: Please provide a different email address'
                 return {'admin_email': get_admins(), 'log': log}
             staff.email = email_address
             staff.save()
-            print(f'===SUCCESS: {email_address} has been updated===')
             log = f'SUCCESS: Email has been updated'
         except Exception as e:
-            print(f'===ERROR: {e}===')
             log = str(e)
     
     # -----Delete a superuser-----
@@ -156,7 +149,6 @@ def get_limit():
     limit = icon_service.call(call)
     limit['amountlimit'] = int(limit['amountlimit'], 16) / 10 ** 18
     limit['blocklimit'] = int(limit['blocklimit'], 16)
-
     return limit
 
 
@@ -180,6 +172,5 @@ def set_limit(request):
 
     # Send transaction
     tx_hash = str(icon_service.send_transaction(signed_transaction))
-    print(f'===set_limit complete: {tx_hash}')
     time.sleep(1)
     return get_limit()

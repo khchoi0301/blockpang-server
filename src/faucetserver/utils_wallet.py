@@ -51,8 +51,6 @@ def get_wallet_balance(wallet_address):
 
 # Send ICX to wallet
 def send_transaction(wallet_address, value):
-    print('transaction called', wallet_address, 'value: ', value, type(value))
-
     transaction = CallTransactionBuilder()\
         .from_(wallet.get_address())\
         .to(default_score)\
@@ -65,7 +63,6 @@ def send_transaction(wallet_address, value):
 
     # Returns the signed transaction object having a signature
     signed_transaction = SignedTransaction(transaction, wallet)
-    print('transaction complete')
 
     # Sends the transaction
     return icon_service.send_transaction(signed_transaction)

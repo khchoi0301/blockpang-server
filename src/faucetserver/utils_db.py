@@ -46,16 +46,12 @@ def db_query(table):
     ]
 
     if (table == 'transaction'):
-        print('===querying transactionDB===')
         return execute_query(query=query[0])
     elif (table == 'users'):
-        print('===querying usersDB===')
         return execute_query(query=query[1])
     elif (table == 'summary'):
-        print('===querying summary===')
         return execute_query(query=query[2], table='summary')
     elif (table == 'leaderboard'):
-        print('===querying leaderboard===')
         return execute_query(query=query[3])
 
 
