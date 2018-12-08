@@ -94,7 +94,7 @@ def update_admin(request):
                 'log': 'ERROR: Please enter a valid email address'}
     except Exception:
         email_address = None
-        # will need to change this when 'add' and 'delete' params are back
+        # will need to change this if 'add' and 'delete' params return
         print(f'===ERROR: No email address===')
         return {'admin_email': get_admins(), 'log': 'ERROR: No email address'}
 

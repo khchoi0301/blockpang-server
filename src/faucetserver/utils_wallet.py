@@ -104,7 +104,7 @@ def get_transaction_result(tx_hash):
         try:
             tx_result = icon_service.get_transaction_result(tx_hash)
         except Exception as e:
-            return {'status': 'fail', 'Error': str(e)}
+            return {'transaction_result': 'fail', 'message': str(e)}
     return tx_result
 
 

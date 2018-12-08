@@ -167,6 +167,7 @@ def execute_query(**kwargs):
         data['admin_email'] = utils_admin.get_admins()
         return data
 
+
 # A helper function called by transfer_stat
 def execute_stat_query(**kwargs):
     req = kwargs['req_body']

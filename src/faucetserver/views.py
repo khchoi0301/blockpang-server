@@ -127,17 +127,17 @@ def req_icx(request):
     if response['block_balance'] < score_min_limit:
         utils_admin.email(str(score_min_limit))
         return JsonResponse({
-            'status': 'fail',
+            'transaction_result': 'fail',
             'reason': 'Not enough icx in score',
-            'log': f'Score has less than {score_min_limit}'
+            'message': f'Score has less than {score_min_limit}'
         })
 
     # transfer icx only when wallet's balance is under the limit
     if response['wallet_balance'] > wallet_max_limit:
         return JsonResponse({
-            'status': 'fail',
+            'transaction_result': 'fail',
             'reason': 'Too much icx in wallet',
-            'log': f'Wallet has more than {wallet_max_limit}'
+            'message': f'Wallet has more than {wallet_max_limit}'
         })
 
     # transfer icx
@@ -165,7 +165,10 @@ def req_icx(request):
 
     if not response['tx_result']['eventLogs']:
         log = response['tx_result']['failure']
-        return JsonResponse({'log': log})
+        return JsonResponse({
+            'transaction_result': 'fail',
+            'message': log['message']
+            })
     else:
         utils_db.insertDB_transaction(
             response['tx_result']['txHash'],
@@ -185,6 +188,6 @@ def req_icx(request):
 
     if result['transaction_result'] == 'fail':
         err = response['tx_result']['failure']['message']
-        result['log'] = err
+        result['message'] = err
 
     return JsonResponse(result)
