@@ -117,8 +117,6 @@ def req_icx(request):
         response['icx_amount'] = round(
             int(req_body['game_score']) / transfer_ratio)
 
-    print('response', response['icx_amount'])
-
     # Check the balance
     response['wallet_address'] = req_body['wallet']
     response['block_balance'] = utils_wallet.get_block_balance()
@@ -145,7 +143,6 @@ def req_icx(request):
     # transfer icx
     response['tx_hash'] = utils_wallet.send_transaction(
         response['wallet_address'], response['icx_amount'])
-    print('tx_hash', response['tx_hash'])
 
     # Add transaction_result key to result
     response['tx_result'] = utils_wallet.get_transaction_result(
@@ -167,9 +164,9 @@ def req_icx(request):
         response['wallet_address'])
 
     if not response['tx_result']['eventLogs']:
-        print(response['tx_result']['failure'])
+        log = response['tx_result']['failure']
+        return JsonResponse({'log': log})
     else:
-        print('result', response['tx_result'])
         utils_db.insertDB_transaction(
             response['tx_result']['txHash'],
             response['tx_result']['blockHeight'],

@@ -95,12 +95,12 @@ def get_latest_block():
 
 def get_transaction_result(tx_hash):
     try:
-        time.sleep(1)
-        print('1s')
+        time.sleep(0.6)
+        print('0.6s')
         tx_result = icon_service.get_transaction_result(tx_hash)
     except:
-        time.sleep(1)
-        print('2s')
+        time.sleep(0.5)
+        print('1.1s')
         try:
             tx_result = icon_service.get_transaction_result(tx_hash)
         except Exception as e:
