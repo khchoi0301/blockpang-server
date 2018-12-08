@@ -167,7 +167,7 @@ def req_icx(request):
         log = response['tx_result']['failure']
         return JsonResponse({
             'transaction_result': 'fail',
-            'message': log['message']
+            'message': "Don't be greedy. Please try again later."
             })
     else:
         utils_db.insertDB_transaction(
