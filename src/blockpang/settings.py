@@ -84,8 +84,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'blockpang.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
@@ -104,9 +102,6 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'charredbroccoli@gmail.com'
 EMAIL_HOST_PASSWORD = 'tamago111'
-
-# Password validation
-# https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -131,10 +126,6 @@ CORS_ORIGIN_ALLOW_ALL = True
 #         'www.mysite.com',
 #         'www.anothersite.com'
 # )
-
-
-# Internationalization
-# https://docs.djangoproject.com/en/2.0/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
