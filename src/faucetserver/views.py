@@ -22,7 +22,6 @@ def index(request):
     staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
     for staff in staffs:
         staff_list.append(staff)
-    print(staff_list)
     return JsonResponse({'admin_email': staff_list})
 
 
@@ -125,14 +124,8 @@ def req_icx(request):
 
     # send a email to admin when score doesn't have enough icx
     if response['block_balance'] < score_min_limit:
-        print('here')
-        print(default_score)
-        print(response['wallet_address'])
-        print(req_body['game_score'])
-
         utils_db.insertDB_transaction(
             '0x Not enough icx in score', 0, default_score, response['wallet_address'], 0, 0, req_body['game_score'])
-
         utils_admin.email(str(score_min_limit))
         return JsonResponse({
             'transaction_result': 'fail',
@@ -144,7 +137,6 @@ def req_icx(request):
     if response['wallet_balance'] > wallet_max_limit:
         utils_db.insertDB_transaction(
             '0x Too much icx in wallet', 0, default_score, response['wallet_address'], 0, 0, req_body['game_score'])
-
         return JsonResponse({
             'transaction_result': 'fail',
             'reason': 'Too much icx in wallet',
@@ -164,7 +156,6 @@ def req_icx(request):
         response['transaction_result'] = 'success'
 
     # Check result
-    print(response['tx_result'])
     response['game_score'] = req_body['game_score']
     response['block_address'] = default_score
     response['wallet_latest_transaction'] = utils_wallet.get_latest_transaction(
