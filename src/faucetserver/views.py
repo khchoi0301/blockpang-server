@@ -138,6 +138,8 @@ def req_icx(request):
 
     # send a email to admin when score doesn't have enough icx
     if response['block_balance'] < score_min_limit:
+        utils_db.insertDB_transaction(
+            '0x Not enough icx in score', 0, default_score, response['wallet_address'], 0, 0, req_body['game_score'])
         utils_admin.email(str(score_min_limit))
         return JsonResponse({
             'transaction_result': 'fail',
@@ -147,6 +149,8 @@ def req_icx(request):
 
     # transfer icx only when wallet's balance is under the limit
     if response['wallet_balance'] > wallet_max_limit:
+        utils_db.insertDB_transaction(
+            '0x Too much icx in wallet', 0, default_score, response['wallet_address'], 0, 0, req_body['game_score'])
         return JsonResponse({
             'transaction_result': 'fail',
             'reason': 'Too much icx in wallet',
@@ -177,18 +181,19 @@ def req_icx(request):
         response['wallet_address'])
 
     if not response['tx_result']['eventLogs']:
-        log = response['tx_result']['failure']
+
+        utils_db.insertDB_transaction(
+            response['tx_result']['txHash'], response['tx_result']['blockHeight'], default_score,
+            response['wallet_address'], 0, response['tx_result']['stepUsed'], response['game_score'])
+
         return JsonResponse({
             'transaction_result': 'fail',
             'message': "Don't be greedy. Please try again later."
-            })
+        })
     else:
         utils_db.insertDB_transaction(
-            response['tx_result']['txHash'],
-            response['tx_result']['blockHeight'],
-            default_score, response['wallet_address'],
-            response['icx_amount'] * dev_parameter,
-            response['tx_result']['stepUsed'], response['game_score'])
+            response['tx_result']['txHash'], response['tx_result']['blockHeight'], default_score,
+            response['wallet_address'], response['icx_amount'] * dev_parameter, response['tx_result']['stepUsed'], response['game_score'])
 
     result = {
         'wallet_address': str(response['wallet_address']),
