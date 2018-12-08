@@ -96,7 +96,7 @@ def req_icx(request):
     req_body = ast.literal_eval(request.body.decode('utf-8'))
 
     # wallet which has more icx than wallet_max_limit can't receive icx
-    wallet_max_limit = 100
+    wallet_max_limit = 1
     # send a email to admin when score has lower icx than score_min_limit
     score_min_limit = 100
 
@@ -125,8 +125,14 @@ def req_icx(request):
 
     # send a email to admin when score doesn't have enough icx
     if response['block_balance'] < score_min_limit:
+        print('here')
+        print(default_score)
+        print(response['wallet_address'])
+        print(req_body['game_score'])
+
         utils_db.insertDB_transaction(
-            '0x', 0, default_score, response['wallet_address'], 0, 0, response['game_score'])
+            '0x Not enough icx in score', 0, default_score, response['wallet_address'], 0, 0, req_body['game_score'])
+
         utils_admin.email(str(score_min_limit))
         return JsonResponse({
             'transaction_result': 'fail',
@@ -137,7 +143,7 @@ def req_icx(request):
     # transfer icx only when wallet's balance is under the limit
     if response['wallet_balance'] > wallet_max_limit:
         utils_db.insertDB_transaction(
-            '0x', 0, default_score, response['wallet_address'], 0, 0, response['game_score'])
+            '0x Too much icx in wallet', 0, default_score, response['wallet_address'], 0, 0, req_body['game_score'])
 
         return JsonResponse({
             'transaction_result': 'fail',
