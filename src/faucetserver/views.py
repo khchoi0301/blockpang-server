@@ -1,9 +1,7 @@
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import connections
-import ast
 import os
 import urllib.request
 from iconsdk.icon_service import IconService
@@ -26,24 +24,18 @@ def index(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny, ])  # Remove this when frontend is ready
-@csrf_exempt
 def db_query(request, table):
     return JsonResponse(utils_db.db_query(table), safe=False)
 
 
 # Show monthly, daily and total stats by user
 @api_view(['POST'])
-@permission_classes([AllowAny, ])  # Remove this when frontend is ready
-@csrf_exempt
 def transfer_stat(request):
     return JsonResponse(utils_db.transfer_stat(request), safe=False)
 
 
 # Add or delete admin from admin list
 @api_view(['POST'])
-@permission_classes([AllowAny, ])  # Remove this when frontend is ready
-@csrf_exempt
 def update_admin(request):
     if request.method == 'POST':
         return JsonResponse(utils_admin.update_admin(request), safe=False)
@@ -52,7 +44,6 @@ def update_admin(request):
 # Create Wallet and Wallet address to USERS DB
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
-@csrf_exempt
 def create_wallet(request):
     if request.method == 'POST':
         return JsonResponse(utils_wallet.create_wallet(request))
@@ -61,7 +52,6 @@ def create_wallet(request):
 # Add Wallet address to USERS DB
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
-@csrf_exempt
 def update_wallet(request):
     if request.method == 'POST':
         return JsonResponse(utils_wallet.update_wallet(request), safe=False)
@@ -70,21 +60,17 @@ def update_wallet(request):
 # Get wallet balance
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
-@csrf_exempt
 def get_wallet_balance(request):
-    if request.method == 'POST':
-        req_body = ast.literal_eval(request.body.decode('utf-8'))
-        wallet_address = req_body['wallet']
-        return JsonResponse({
-            'wallet': wallet_address,
-            'wallet_balance': utils_wallet.get_wallet_balance(wallet_address)},
-            safe=False)
+    req_body = utils_db.request_parser(request)
+    wallet_address = req_body['wallet']
+    return JsonResponse({
+        'wallet': wallet_address,
+        'wallet_balance': utils_wallet.get_wallet_balance(wallet_address)},
+        safe=False)
 
 
 # Set MAX ICX transfer limit and MIN block interval limit
 @api_view(['POST'])
-@permission_classes([AllowAny, ])  # Remove this when frontend is ready
-@csrf_exempt
 def set_limit(request):
     if request.method == 'POST':
         return JsonResponse(utils_admin.set_limit(request))
@@ -92,7 +78,6 @@ def set_limit(request):
 
 # Check MAX ICX transfer limit and MIN block interval lilmit
 @api_view(['GET'])
-@permission_classes([AllowAny, ])  # Remove this when frontend is ready
 def get_limit(request):
     return JsonResponse(utils_admin.get_limit())
 
@@ -100,13 +85,9 @@ def get_limit(request):
 # Transfer ICX to the wallet when conditions are satisfied
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
-@csrf_exempt
 def req_icx(request):
-    if request.method != 'POST':
-        return '===ERROR : request.method should be POST'
-
     response = {}
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = utils_db.request_parser(request)
 
     # wallet which has more icx than wallet_max_limit can't receive icx
     wallet_max_limit = 100

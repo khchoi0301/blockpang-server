@@ -1,4 +1,4 @@
-from django.db import connections
+from django.db import connections, connection
 from django.conf import settings
 from django.http import HttpResponse
 import ast
@@ -10,7 +10,6 @@ from iconsdk.builder.call_builder import CallBuilder
 from . import utils_admin, utils_wallet
 
 
-cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
 icon_service = IconService(HTTPProvider(settings.ICON_SERVICE_PROVIDER))
 wallet = settings.WALLET
@@ -56,7 +55,7 @@ def db_query(table):
 
 
 def transfer_stat(request):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = request_parser(request)
     query = [
         '''
         SELECT SUM(transaction.amount),count(transaction.amount)
@@ -101,7 +100,7 @@ def transfer_stat(request):
 
 # Insert a new row to users table
 def insertDB_users(request, wallet):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = request_parser(request)
     req_body['wallet'] = wallet
 
     query = '''
@@ -110,10 +109,12 @@ def insertDB_users(request, wallet):
         VALUES (%s,%s,%s,%s,%s,%s)
         '''
 
-    cursor.execute(query, (
-        req_body['service_provider'], req_body['wallet'], req_body['email'],
-        req_body['user_pid'], req_body['profile_img_url'],
-        req_body['nickname']))
+    with connection.cursor() as c:
+        c.execute(query, (
+            req_body['service_provider'], req_body['wallet'],
+            req_body['email'], req_body['user_pid'], 
+            req_body['profile_img_url'], req_body['nickname'])
+            )
 
     connections['default'].commit()
 
@@ -129,8 +130,10 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
         (txhash, block, score, wallet, amount, txfee, gscore) 
         VALUES (%s,%s,%s,%s,%s,%s,%s)
         '''
-    cursor.execute(query, (txhash, block, score,
-                           wallet, amount, txfee, gscore))
+
+    with connection.cursor() as c:
+        c.execute(query, (txhash, block, score,
+                            wallet, amount, txfee, gscore))
 
     connections['default'].commit()
 
@@ -140,28 +143,29 @@ def insertDB_transaction(txhash, block, score, wallet, amount, txfee, gscore):
 
 # A helper function called by db_query
 def execute_query(**kwargs):
-    if ('var' in kwargs):
-        var = kwargs['var']
-        cursor.execute(kwargs['query'], (var,))
-    else:
-        cursor.execute(kwargs['query'])
+    with connection.cursor() as c:
+        if ('var' in kwargs):
+            var = kwargs['var']
+            c.execute(kwargs['query'], (var,))
+        else:
+            c.execute(kwargs['query'])
 
-    row_headers = [x[0] for x in cursor.description]
-    query_result = cursor.fetchall()
-    data = []
+        row_headers = [x[0] for x in c.description]
+        query_result = c.fetchall()
+        data = []
 
-    for result in query_result:
-        data.append(dict(zip(row_headers, result)))
+        for result in query_result:
+            data.append(dict(zip(row_headers, result)))
 
-    if ('table' not in kwargs):
-        return data
-    else:
-        data = data[0]
-        data['total_user'] = len(db_query('users'))
-        data['score_address'] = default_score
-        data['current_balance'] = utils_wallet.get_block_balance()
-        data['admin_email'] = utils_admin.get_admins()
-        return data
+        if ('table' not in kwargs):
+            return data
+        else:
+            data = data[0]
+            data['total_user'] = len(db_query('users'))
+            data['score_address'] = default_score
+            data['current_balance'] = utils_wallet.get_block_balance()
+            data['admin_email'] = utils_admin.get_admins()
+            return data
 
 
 # A helper function called by transfer_stat
@@ -178,23 +182,28 @@ def execute_stat_query(**kwargs):
 
     cols = ['', 'monthly', 'daily', 'transaction_list']
     
-    for n in range(1,4):
-        current_query = query[n]
-        if n == 3:
-            cursor.execute(current_query, (req['user'], ))
-        else:
-            cursor.execute(current_query, (req['user'], isAll,))
-        row_headers = [x[0] for x in cursor.description]
-        query_result = cursor.fetchall()
-        for result in query_result:
-            data[cols[n]].append(dict(zip(row_headers, result)))
-    
-    for result in data['monthly']:
-        result['month'] = result['month'].month
-    cursor.execute(query[0], (req['user'], isAll,))
-    total = cursor.fetchall()[0]
-    data['total_transfer_amount'] = total[0]
-    data['total_transfer'] = total[1]
+    with connection.cursor() as c:
+        for n in range(1,4):
+            current_query = query[n]
+            if n == 3:
+                c.execute(current_query, (req['user'], ))
+            else:
+                c.execute(current_query, (req['user'], isAll,))
+            row_headers = [x[0] for x in c.description]
+            query_result = c.fetchall()  
+            for result in query_result:
+                data[cols[n]].append(dict(zip(row_headers, result)))
+        
+        for result in data['monthly']:
+            result['month'] = result['month'].month
+        
+        c.execute(query[0], (req['user'], isAll,))
+        total = c.fetchall()[0]
+        data['total_transfer_amount'] = total[0]
+        data['total_transfer'] = total[1]
+        
+        return data
 
-    return data
 
+def request_parser(request):
+    return ast.literal_eval(request.body.decode('utf-8'))

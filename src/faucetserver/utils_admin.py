@@ -6,7 +6,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
-import ast
 import os
 import re
 import time
@@ -28,6 +27,7 @@ from iconsdk.builder.transaction_builder import (
     TransactionBuilder,
     CallTransactionBuilder,
 )
+from . import utils_db
 
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
@@ -80,7 +80,7 @@ def email(minlimit):
 
 
 def update_admin(request):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = utils_db.request_parser(request)
     username = req_body['username']
 
     try:
@@ -153,7 +153,7 @@ def get_limit():
 
 
 def set_limit(request):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = utils_db.request_parser(request)
     amount_limit = req_body['amount_limit']
     block_limit = req_body['block_limit']
 

@@ -1,6 +1,5 @@
 from django.db import connections
 from django.conf import settings
-import ast
 import os
 import urllib.request
 import time
@@ -33,7 +32,7 @@ def create_wallet(request):
 
 
 def update_wallet(request):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = utils_db.request_parser(request)
     try:
         return utils_db.insertDB_users(request, req_body['wallet'])
     except Exception as e:
