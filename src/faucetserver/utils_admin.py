@@ -57,9 +57,7 @@ def get_token(request):
 def get_admins():
     staff_list = []
     staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
-    for staff in staffs:
-        staff_list.append(staff)
-    return staff_list
+    return staffs[0]
 
 
 def is_valid_email(email):
