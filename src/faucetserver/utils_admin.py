@@ -86,11 +86,13 @@ def update_admin(request):
         if not is_valid_email(email_address):
             return {
                 'admin_email': get_admins(), 
-                'log': 'ERROR: Please enter a valid email address'}
+                'message': 'ERROR: Please enter a valid email address'}
     except Exception:
         email_address = None
         # will need to change this if 'add' and 'delete' params return
-        return {'admin_email': get_admins(), 'log': 'ERROR: No email address'}
+        return {
+            'admin_email': get_admins(),
+            'message': 'ERROR: No email address'}
 
     # -----Add new superuser-----
     # if req_body['cmd'] == 'add':
@@ -116,7 +118,7 @@ def update_admin(request):
             staff = User.objects.get(username=username, is_superuser=True)
             if staff.email == email_address:
                 log = f'ERROR: Please provide a different email address'
-                return {'admin_email': get_admins(), 'log': log}
+                return {'admin_email': get_admins(), 'message': log}
             staff.email = email_address
             staff.save()
             log = f'SUCCESS: Email has been updated'
@@ -135,7 +137,7 @@ def update_admin(request):
     #         print(f'===ERROR: {username} is not in admin list===')
     #         log = f'ERROR: {username} is not in admin list'
 
-    return {'admin_email': get_admins(), 'log': log}
+    return {'admin_email': get_admins(), 'message': log}
 
 
 def get_limit():
