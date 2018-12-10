@@ -21,6 +21,7 @@ def db_query(table):
         '''
         SELECT * FROM users, transaction
         WHERE transaction.wallet = users.wallet
+        AND transaction.amount != 0
         ORDER BY transaction.timestamp DESC;
         ''',
         '''
@@ -85,7 +86,8 @@ def transfer_stat(request):
         '''
         SELECT transaction.*, users.email FROM users,transaction
         WHERE transaction.wallet = users.wallet
-        AND (users.email in (%s)) 
+        AND (users.email in (%s))
+        AND (transaction.amount != 0)
         ORDER BY transaction.id DESC
         '''
     ]
