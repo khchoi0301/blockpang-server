@@ -37,24 +37,21 @@ def transfer_stat(request):
 # Add or delete admin from admin list
 @api_view(['POST'])
 def update_admin(request):
-    if request.method == 'POST':
-        return JsonResponse(utils_admin.update_admin(request), safe=False)
+    return JsonResponse(utils_admin.update_admin(request), safe=False)
 
 
 # Create Wallet and Wallet address to USERS DB
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
 def create_wallet(request):
-    if request.method == 'POST':
-        return JsonResponse(utils_wallet.create_wallet(request))
+    return JsonResponse(utils_wallet.create_wallet(request))
 
 
 # Add Wallet address to USERS DB
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
 def update_wallet(request):
-    if request.method == 'POST':
-        return JsonResponse(utils_wallet.update_wallet(request), safe=False)
+    return JsonResponse(utils_wallet.update_wallet(request), safe=False)
 
 
 # Get wallet balance
@@ -72,8 +69,7 @@ def get_wallet_balance(request):
 # Set MAX ICX transfer limit and MIN block interval limit
 @api_view(['POST'])
 def set_limit(request):
-    if request.method == 'POST':
-        return JsonResponse(utils_admin.set_limit(request))
+    return JsonResponse(utils_admin.set_limit(request))
 
 
 # Check MAX ICX transfer limit and MIN block interval lilmit
