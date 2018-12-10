@@ -73,6 +73,19 @@ class FaucetScore(IconScoreBase):
 
         return 'limit changed'
 
+    @external(readonly=True)
+    def msg_sender(self) -> str:
+        Logger.info(f'msg_sender {self} ', TAG)
+        Logger.info(f'msg_sender {self.msg.sender}', TAG)
+
+        return self.msg.sender
+
+    @external(readonly=True)
+    def getowner(self) -> str:
+        Logger.info(f'owner {self}', TAG)
+        Logger.info(f'owner {self.owner}', TAG)
+        return self.owner
+
     @external
     def get_limit(self) -> str:
 
@@ -88,23 +101,31 @@ class FaucetScore(IconScoreBase):
     @external
     def send_icx(self, _to: Address, value: int):
 
-        amount = value * 10 ** 16
+        amount = value * 10 ** 16  # need to change 16 to 18 when deploying
 
         Logger.info(
             f'sendICXcalled {amount} to {_to} value {value} amountlimit : {self._amountlimit} blocklimit : {self._blocklimit}', TAG)
 
-        # check if the address already asked for in last 30 blocks
+        # check msg came from server
+        if self.msg.sender != self.owner:
+            Logger.info(
+                f'msg sender {self.msg.sender} should be the same as owner {self.owner}', TAG)
+            revert(
+                f'msg sender {self.msg.sender} should be the same as owner {self.owner}')
+
+        # check the address already asked for in last 30 blocks
         if self._dispenseTracking[_to] > 0 and (self.block.height < self._dispenseTracking[_to] + self._blocklimit):
             Logger.info(
                 f'Please wait for {self._blocklimit} blocks to be created before requesting again', TAG)
             revert(
                 f'Please wait for {self._blocklimit} blocks to be created before requesting again')
 
-        # check if score has enough balance
+        # check score has enough balance
         if(self.icx.get_balance(self.address) < amount):
             Logger.info(f'Not enough blance in faucet', TAG)
             revert('faucet doesn\'t have balance to dispense')
 
+        # check request amount is lower than limit
         if(self._amountlimit < amount):
             Logger.info(f'requested amount is over the limit', TAG)
             revert('requested amount is over the limit')
@@ -116,6 +137,7 @@ class FaucetScore(IconScoreBase):
         self.FundTransfer(_to, amount, False)
         Logger.debug(f'{amount} ICX sent to {_to} ', TAG)
 
+        # record the latest transaction block
         self._dispenseTracking[_to] = self.block.height
         Logger.info(f'_dispenseTracking : {self._dispenseTracking[_to]}', TAG)
 
