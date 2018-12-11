@@ -7,6 +7,7 @@ urlpatterns = [
     path('admin/get_limit', views.get_limit),
     path('admin/set_limit', views.set_limit),
     path('admin/update', views.update_admin),
+    path('db/leaderboard', views.leaderboard),
     path('db/stat', views.transfer_stat),
     path('db/<str:table>', views.db_query),
     path('wallet/create', views.create_wallet),

@@ -28,6 +28,13 @@ def db_query(request, table):
     return JsonResponse(utils_db.db_query(table), safe=False)
 
 
+# Show top 10 high scores
+@api_view(['GET'])
+@permission_classes([AllowAny, ])
+def leaderboard(request):
+    return JsonResponse(utils_db.db_query('leaderboard'), safe=False)
+
+
 # Show monthly, daily and total stats by user
 @api_view(['POST'])
 @permission_classes([AllowAny, ])
