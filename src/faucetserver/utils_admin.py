@@ -5,8 +5,6 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.db import IntegrityError
-from django.views.decorators.csrf import csrf_exempt
-import ast
 import os
 import re
 import time
@@ -28,6 +26,7 @@ from iconsdk.builder.transaction_builder import (
     TransactionBuilder,
     CallTransactionBuilder,
 )
+from . import utils_db
 
 cursor = connections['default'].cursor()
 default_score = settings.DEFAULT_SCORE_ADDRESS
@@ -37,7 +36,6 @@ wallet_from = settings.WALLET_FROM
 
 
 # Check admin username and password, and then give token
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes((AllowAny,))
 def get_token(request):
@@ -59,9 +57,7 @@ def get_token(request):
 def get_admins():
     staff_list = []
     staffs = User.objects.filter(is_staff=True).values_list('email', flat=True)
-    for staff in staffs:
-        staff_list.append(staff)
-    return staff_list
+    return staffs[0]
 
 
 def is_valid_email(email):
@@ -80,7 +76,7 @@ def email(minlimit):
 
 
 def update_admin(request):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = utils_db.request_parser(request)
     username = req_body['username']
 
     try:
@@ -88,11 +84,13 @@ def update_admin(request):
         if not is_valid_email(email_address):
             return {
                 'admin_email': get_admins(), 
-                'log': 'ERROR: Please enter a valid email address'}
+                'message': 'ERROR: Please enter a valid email address'}
     except Exception:
         email_address = None
         # will need to change this if 'add' and 'delete' params return
-        return {'admin_email': get_admins(), 'log': 'ERROR: No email address'}
+        return {
+            'admin_email': get_admins(),
+            'message': 'ERROR: No email address'}
 
     # -----Add new superuser-----
     # if req_body['cmd'] == 'add':
@@ -118,7 +116,7 @@ def update_admin(request):
             staff = User.objects.get(username=username, is_superuser=True)
             if staff.email == email_address:
                 log = f'ERROR: Please provide a different email address'
-                return {'admin_email': get_admins(), 'log': log}
+                return {'admin_email': get_admins(), 'message': log}
             staff.email = email_address
             staff.save()
             log = f'SUCCESS: Email has been updated'
@@ -137,7 +135,7 @@ def update_admin(request):
     #         print(f'===ERROR: {username} is not in admin list===')
     #         log = f'ERROR: {username} is not in admin list'
 
-    return {'admin_email': get_admins(), 'log': log}
+    return {'admin_email': get_admins(), 'message': log}
 
 
 def get_limit():
@@ -153,7 +151,7 @@ def get_limit():
 
 
 def set_limit(request):
-    req_body = ast.literal_eval(request.body.decode('utf-8'))
+    req_body = utils_db.request_parser(request)
     amount_limit = req_body['amount_limit']
     block_limit = req_body['block_limit']
 
