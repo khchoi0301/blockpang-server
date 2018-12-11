@@ -30,6 +30,7 @@ def db_query(request, table):
 
 # Show monthly, daily and total stats by user
 @api_view(['POST'])
+@permission_classes([AllowAny, ])
 def transfer_stat(request):
     return JsonResponse(utils_db.transfer_stat(request), safe=False)
 
