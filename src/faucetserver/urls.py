@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/update', views.update_admin),
     path('db/leaderboard', views.leaderboard),
     path('db/stat', views.transfer_stat),
+    path('db/users', views.users),
     path('db/<str:table>', views.db_query),
     path('wallet/create', views.create_wallet),
     path('wallet/update', views.update_wallet),

@@ -28,6 +28,13 @@ def db_query(request, table):
     return JsonResponse(utils_db.db_query(table), safe=False)
 
 
+# temp, return user info when logging in
+@api_view(['GET'])
+@permission_classes([AllowAny, ])
+def users(request):
+    return JsonResponse(utils_db.db_query('users'), safe=False)
+
+
 # Show top 10 high scores
 @api_view(['GET'])
 @permission_classes([AllowAny, ])
