@@ -43,35 +43,33 @@ class FaucetScore(IconScoreBase):
             f'on_update {self._amountlimit} {self._blocklimit}', TAG)
 
     @external(readonly=True)
-    def get_balance(self) -> str:
+    def get_balance(self) -> int:
         Logger.info(f'get_balance {self}', TAG)
         return self.icx.get_balance(self.address)
 
     @external(readonly=True)
-    def get_wallet_balance(self, _to: Address) -> str:
+    def get_wallet_balance(self, _to: Address) -> int:
         Logger.info(f'get_balance of {_to}', TAG)
         return self.icx.get_balance(_to)
 
     @external(readonly=True)
-    def block_height(self) -> str:
+    def block_height(self) -> int:
         Logger.info(f'block_height {self}', TAG)
         return self.block.height
 
     @external(readonly=True)
-    def find_latest_transaction(self, _to: Address) -> str:
+    def find_latest_transaction(self, _to: Address) -> int:
         Logger.info(f'find_latest_transaction {self}', TAG)
         return self._dispenseTracking[_to]
 
     @external
-    def set_limit(self, amountlimit: int, blocklimit: int):
+    def set_limit(self, amountlimit: int, blocklimit: int) -> None:
 
         self._amountlimit = amountlimit * 10 ** 18
         self._blocklimit = blocklimit
 
         Logger.info(
             f'Set_limit_called : {self._amountlimit} , {amountlimit} icx ,  blocklimit : {self._blocklimit}', TAG)
-
-        return 'limit changed'
 
     @external(readonly=True)
     def msg_sender(self) -> str:
@@ -86,7 +84,7 @@ class FaucetScore(IconScoreBase):
         Logger.info(f'owner {self.owner}', TAG)
         return self.owner
 
-    @external
+    @external(readonly=True)
     def get_limit(self) -> str:
 
         limit = {}
