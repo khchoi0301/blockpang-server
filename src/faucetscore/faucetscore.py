@@ -19,8 +19,6 @@ class FaucetScore(IconScoreBase):
             self._DISPENSE_TRACK, db, value_type=int)
         self._amountlimit = VarDB(self._AMOUNT_LIMIT, db, value_type=int)
         self._blocklimit = VarDB(self._BLOCK_LIMIT, db, value_type=int)
-        # self._amountlimit = 100 * 10 ** 18
-        # self._blocklimit = 1
 
         Logger.info(f'on_init', TAG)
 
@@ -30,8 +28,7 @@ class FaucetScore(IconScoreBase):
         self._amountlimit = amountlimit
         self._blocklimit = 30
 
-        Logger.info(
-            f'on_install {self._amountlimit} {self._blocklimit}', TAG)
+        Logger.info(f'on_install {self._amountlimit} {self._blocklimit}', TAG)
 
     def on_update(self) -> None:
         super().on_update()
@@ -39,8 +36,7 @@ class FaucetScore(IconScoreBase):
         self._amountlimit = amountlimit
         self._blocklimit = 30
 
-        Logger.info(
-            f'on_update {self._amountlimit} {self._blocklimit}', TAG)
+        Logger.info(f'on_update {self._amountlimit} {self._blocklimit}', TAG)
 
     @external(readonly=True)
     def get_balance(self) -> int:
