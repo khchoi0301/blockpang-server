@@ -22,8 +22,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '-k6p2ni_^c^n&gfk9sva07z!ov8dva=lh9w$^vj=148gvz&vaf'
 DEBUG = False
 ALLOWED_HOSTS = ['*']
-DEFAULT_SCORE_ADDRESS = 'cxffcc56806535faba51f3429cd12c21e9e28e1ec4'
-ICON_SERVICE_PROVIDER = "https://bicon.net.solidwallet.io/api/v3"
+# DEFAULT_SCORE_ADDRESS = 'cxffcc56806535faba51f3429cd12c21e9e28e1ec4'
+# ICON_SERVICE_PROVIDER = "https://bicon.net.solidwallet.io/api/v3"
+DEFAULT_SCORE_ADDRESS = 'cx1cf55bbdafb6d143f06a20285d685c4a3a3f1a16'
+ICON_SERVICE_PROVIDER = "http://localhost:9000/api/v3"
 
 
 INSTALLED_APPS = [
@@ -36,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-	'rest_framework.authtoken'
+    'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -55,7 +57,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated', 
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.FormParser',
