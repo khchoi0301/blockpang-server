@@ -33,8 +33,8 @@ class FaucetScore(IconScoreBase):
     def on_update(self) -> None:
         super().on_update()
         amountlimit = 100 * 10 ** 18
-        self._amountlimit = amountlimit
-        self._blocklimit = 30
+        self._amountlimit.set(amountlimit)
+        self._blocklimit.set(30)
 
         Logger.info(f'on_update {self._amountlimit} {self._blocklimit}', TAG)
 
@@ -61,8 +61,9 @@ class FaucetScore(IconScoreBase):
     @external
     def set_limit(self, amountlimit: int, blocklimit: int) -> None:
 
-        self._amountlimit = amountlimit * 10 ** 18
-        self._blocklimit = blocklimit
+        amountlimit = amountlimit * 10 ** 18
+        self._amountlimit.set(amountlimit)
+        self._blocklimit.set(blocklimit)
 
         Logger.info(
             f'Set_limit_called : {self._amountlimit} , {amountlimit} icx ,  blocklimit : {self._blocklimit}', TAG)
