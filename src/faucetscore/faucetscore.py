@@ -96,7 +96,7 @@ class FaucetScore(IconScoreBase):
         return limit
 
     @external
-    def send_icx(self, _to: Address, value: int):
+    def send_icx(self, _to: Address, value: int) -> str:
 
         amount = value * 10 ** 16  # need to change 16 to 18 when deploying
 
