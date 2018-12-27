@@ -25,10 +25,11 @@ class FaucetScore(IconScoreBase):
     def on_install(self) -> None:
         super().on_install()
         amountlimit = 100 * 10 ** 18
-        self._amountlimit = amountlimit
-        self._blocklimit = 30
+        self._amountlimit.set(amountlimit)
+        self._blocklimit.set(30)
 
-        Logger.info(f'on_install {self._amountlimit} {self._blocklimit}', TAG)
+        Logger.info(
+            f'on_install {self._amountlimit.get()} {self._blocklimit.get()}', TAG)
 
     def on_update(self) -> None:
         super().on_update()
@@ -36,7 +37,8 @@ class FaucetScore(IconScoreBase):
         self._amountlimit.set(amountlimit)
         self._blocklimit.set(30)
 
-        Logger.info(f'on_update {self._amountlimit} {self._blocklimit}', TAG)
+        Logger.info(
+            f'on_update {self._amountlimit.get()} {self._blocklimit.get()}', TAG)
 
     @external(readonly=True)
     def get_balance(self) -> int:
@@ -66,7 +68,7 @@ class FaucetScore(IconScoreBase):
         self._blocklimit.set(blocklimit)
 
         Logger.info(
-            f'Set_limit_called : {self._amountlimit} , {amountlimit} icx ,  blocklimit : {self._blocklimit}', TAG)
+            f'Set_limit_called : {self._amountlimit.get()} , {amountlimit} icx ,  blocklimit : {self._blocklimit.get()}', TAG)
 
     @external(readonly=True)
     def msg_sender(self) -> str:
@@ -85,11 +87,11 @@ class FaucetScore(IconScoreBase):
     def get_limit(self) -> str:
 
         limit = {}
-        limit['amountlimit'] = self._amountlimit
-        limit['blocklimit'] = self._blocklimit
+        limit['amountlimit'] = self._amountlimit.get()
+        limit['blocklimit'] = self._blocklimit.get()
 
         Logger.info(
-            f'Get_limit_called : {self._amountlimit}  blocklimit : {self._blocklimit}', TAG)
+            f'Get_limit_called : {self._amountlimit.get()}  blocklimit : {self._blocklimit.get()}', TAG)
 
         return limit
 
@@ -99,7 +101,7 @@ class FaucetScore(IconScoreBase):
         amount = value * 10 ** 16  # need to change 16 to 18 when deploying
 
         Logger.info(
-            f'sendICXcalled {amount} to {_to} value {value} amountlimit : {self._amountlimit} blocklimit : {self._blocklimit}', TAG)
+            f'sendICXcalled {amount} to {_to} value {value} amountlimit : {self._amountlimit.get()} blocklimit : {self._blocklimit.get()}', TAG)
 
         # check msg came from server
         if self.msg.sender != self.owner:
@@ -109,11 +111,11 @@ class FaucetScore(IconScoreBase):
                 f'msg sender {self.msg.sender} should be the same as owner {self.owner}')
 
         # check the address already asked for in last 30 blocks
-        if self._dispenseTracking[_to] > 0 and (self.block.height < self._dispenseTracking[_to] + self._blocklimit):
+        if self._dispenseTracking[_to] > 0 and (self.block.height < self._dispenseTracking[_to] + self._blocklimit.get()):
             Logger.info(
-                f'Please wait for {self._blocklimit} blocks to be created before requesting again', TAG)
+                f'Please wait for {self._blocklimit.get()} blocks to be created before requesting again', TAG)
             revert(
-                f'Please wait for {self._blocklimit} blocks to be created before requesting again')
+                f'Please wait for {self._blocklimit.get()} blocks to be created before requesting again')
 
         # check score has enough balance
         if(self.icx.get_balance(self.address) < amount):
@@ -121,7 +123,7 @@ class FaucetScore(IconScoreBase):
             revert('faucet doesn\'t have balance to dispense')
 
         # check request amount is lower than limit
-        if(self._amountlimit < amount):
+        if(self._amountlimit.get() < amount):
             Logger.info(f'requested amount is over the limit', TAG)
             revert('requested amount is over the limit')
 
